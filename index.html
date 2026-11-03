@@ -1,0 +1,3942 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Đấu Trường Khôi Lỗi AR - Tiên Giới Sa Bàn</title>
+  <!-- Bootstrap 5.3 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
+  <!-- Google Fonts: Cinzel Decorative & Be Vietnam Pro -->
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Cinzel+Decorative:wght@700;900&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --obsidian: #08090f;
+      --obsidian-glass: rgba(12, 15, 26, 0.84);
+      --immortal-gold: #f5c542;
+      --immortal-gold-glow: rgba(245, 197, 66, 0.55);
+      --spirit-jade: #00e5a3;
+      --spirit-cyan: #2de2e6;
+      --crimson-demon: #ff2a54;
+      --violet-mage: #b86bff;
+      --panel-border: rgba(245, 197, 66, 0.42);
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--obsidian);
+      font-family: 'Be Vietnam Pro', sans-serif;
+      color: #f4f1ea;
+    }
+
+    /* AR Camera Video Layer */
+    #ar-video {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      z-index: 1;
+      display: none;
+      filter: contrast(1.05) brightness(0.92);
+    }
+
+    /* Three.js 3D Canvas Layer */
+    #webgl-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 2;
+    }
+
+    /* 2D Gesture Drawing Canvas for Talisman Casting */
+    #spell-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 6;
+      pointer-events: none;
+      touch-action: none;
+    }
+    #spell-canvas.active {
+      pointer-events: auto;
+      cursor: crosshair;
+      background: radial-gradient(circle, rgba(245, 197, 66, 0.08) 0%, rgba(8, 9, 15, 0.45) 100%);
+    }
+
+    /* Floating 3D Unit Bars & Combat Text Container */
+    #world-ui-layer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 4;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    /* Main HUD Overlay */
+    #hud-layer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 8;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 10px 14px;
+    }
+
+    .interactive-ui {
+      pointer-events: auto;
+    }
+
+    /* Xianxia Ornate Panel Styling */
+    .xianxia-panel {
+      background: var(--obsidian-glass);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.65), inset 0 0 15px rgba(245, 197, 66, 0.08);
+    }
+
+    .xianxia-title {
+      font-family: 'Cinzel Decorative', serif;
+      color: var(--immortal-gold);
+      text-shadow: 0 0 12px var(--immortal-gold-glow);
+      letter-spacing: 0.5px;
+    }
+
+    /* Realm & Wave Badge */
+    .realm-badge {
+      background: linear-gradient(135deg, rgba(245, 197, 66, 0.22), rgba(0, 229, 163, 0.18));
+      border: 1px solid var(--immortal-gold);
+      color: #fff;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      box-shadow: 0 0 12px rgba(245, 197, 66, 0.25);
+    }
+
+    /* Proximity AR Buff Indicator */
+    #proximity-banner {
+      transition: all 0.25s ease;
+      background: linear-gradient(90deg, rgba(245, 197, 66, 0.15), rgba(245, 197, 66, 0.35), rgba(245, 197, 66, 0.15));
+      border: 1px solid var(--immortal-gold);
+      color: #fff3c4;
+      border-radius: 999px;
+      padding: 4px 14px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      box-shadow: 0 0 16px rgba(245, 197, 66, 0.45);
+      animation: pulseGold 1.6s infinite alternate;
+    }
+
+    @keyframes pulseGold {
+      0% { transform: scale(0.98); box-shadow: 0 0 10px rgba(245, 197, 66, 0.3); }
+      100% { transform: scale(1.02); box-shadow: 0 0 22px rgba(245, 197, 66, 0.7); }
+    }
+
+    /* Buttons */
+    .btn-xianxia-gold {
+      background: linear-gradient(180deg, #ffe07d 0%, #d49817 100%);
+      color: #161105;
+      font-weight: 800;
+      border: 1px solid #fff3b0;
+      border-radius: 10px;
+      box-shadow: 0 4px 18px rgba(245, 197, 66, 0.45);
+      transition: all 0.2s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .btn-xianxia-gold:hover, .btn-xianxia-gold:active {
+      background: linear-gradient(180deg, #fff0a8 0%, #e8ab21 100%);
+      color: #000;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(245, 197, 66, 0.7);
+    }
+
+    .btn-xianxia-dark {
+      background: rgba(20, 25, 42, 0.88);
+      color: #e6dfd3;
+      border: 1px solid rgba(245, 197, 66, 0.35);
+      border-radius: 9px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+    .btn-xianxia-dark:hover, .btn-xianxia-dark.active {
+      background: rgba(245, 197, 66, 0.22);
+      color: var(--immortal-gold);
+      border-color: var(--immortal-gold);
+      box-shadow: 0 0 12px rgba(245, 197, 66, 0.35);
+    }
+
+    /* Hero Card in Bottom Dock */
+    .hero-slot-card {
+      background: rgba(14, 18, 32, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 10px;
+      padding: 6px 9px;
+      min-width: 125px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-slot-card:hover, .hero-slot-card.selected {
+      border-color: var(--immortal-gold);
+      box-shadow: 0 0 15px rgba(245, 197, 66, 0.35);
+      transform: translateY(-2px);
+    }
+    .hero-slot-card.dead {
+      opacity: 0.45;
+      filter: grayscale(0.8);
+    }
+
+    /* Floating 3D Unit Overhead Bar */
+    .unit-floating-bar {
+      position: absolute;
+      transform: translate(-50%, -100%);
+      width: 68px;
+      pointer-events: none;
+      transition: opacity 0.15s;
+      z-index: 5;
+    }
+    .unit-name-tag {
+      font-size: 10px;
+      font-weight: 700;
+      text-align: center;
+      white-space: nowrap;
+      text-shadow: 0 1px 3px #000, 0 0 5px #000;
+      margin-bottom: 2px;
+      color: #fff;
+    }
+    .hp-track {
+      width: 100%;
+      height: 6px;
+      background: rgba(0, 0, 0, 0.78);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+    .hp-fill {
+      height: 100%;
+      transition: width 0.12s ease-out;
+    }
+    .shield-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      background: rgba(255, 235, 130, 0.85);
+      transition: width 0.12s ease-out;
+    }
+    .mana-track {
+      width: 100%;
+      height: 4px;
+      background: rgba(0, 0, 0, 0.75);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 2px;
+    }
+    .mana-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #38bdf8, #f5c542);
+      transition: width 0.12s ease-out;
+    }
+
+    /* Floating Combat Text */
+    .floating-text {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      font-weight: 800;
+      pointer-events: none;
+      white-space: nowrap;
+      text-shadow: 0 2px 5px rgba(0,0,0,0.95);
+      animation: floatUpFade 1.05s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      z-index: 10;
+    }
+    @keyframes floatUpFade {
+      0% { opacity: 1; transform: translate(-50%, 0px) scale(0.75); }
+      25% { opacity: 1; transform: translate(-50%, -18px) scale(1.12); }
+      100% { opacity: 0; transform: translate(-50%, -48px) scale(0.95); }
+    }
+
+    /* Roguelite Draft Cards */
+    .roguelite-card {
+      background: linear-gradient(160deg, rgba(24, 29, 52, 0.96) 0%, rgba(10, 12, 22, 0.98) 100%);
+      border: 1.5px solid rgba(245, 197, 66, 0.45);
+      border-radius: 14px;
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+    }
+    .roguelite-card:hover {
+      transform: translateY(-6px) scale(1.02);
+      border-color: #ffe27a;
+      box-shadow: 0 12px 30px rgba(245, 197, 66, 0.32), inset 0 0 20px rgba(245, 197, 66, 0.12);
+    }
+    .card-rarity-immortal {
+      border-color: #ff477e;
+      box-shadow: 0 0 18px rgba(255, 71, 126, 0.25);
+    }
+
+    /* Talisman Quick Bar */
+    .talisman-btn {
+      background: linear-gradient(180deg, rgba(42, 31, 14, 0.92), rgba(20, 14, 6, 0.96));
+      border: 1px solid var(--immortal-gold);
+      color: var(--immortal-gold);
+      border-radius: 10px;
+      padding: 5px 10px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      transition: all 0.2s;
+    }
+    .talisman-btn:hover:not(:disabled) {
+      background: rgba(245, 197, 66, 0.25);
+      transform: translateY(-2px);
+      box-shadow: 0 0 14px rgba(245, 197, 66, 0.45);
+    }
+    .talisman-btn:disabled {
+      opacity: 0.45;
+      border-color: rgba(255,255,255,0.2);
+      color: #888;
+    }
+
+    /* Elemental Tile Legend Pills */
+    .element-pill {
+      font-size: 0.72rem;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Boss Warning Banner */
+    #boss-telegraph-alert {
+      display: none;
+      background: rgba(220, 20, 60, 0.88);
+      border: 2px solid #ff99ac;
+      color: #fff;
+      font-weight: 800;
+      padding: 6px 16px;
+      border-radius: 999px;
+      box-shadow: 0 0 25px rgba(255, 42, 84, 0.85);
+      animation: dangerPulse 0.45s infinite alternate;
+    }
+    @keyframes dangerPulse {
+      from { transform: scale(0.97); }
+      to { transform: scale(1.04); }
+    }
+
+    /* GLB Studio Slot Cards */
+    .glb-slot-card {
+      background: linear-gradient(160deg, rgba(18, 23, 42, 0.95) 0%, rgba(9, 12, 22, 0.98) 100%);
+      border: 1.5px dashed rgba(245, 197, 66, 0.4);
+      border-radius: 12px;
+      padding: 12px;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .glb-slot-card.has-custom-glb {
+      border-style: solid;
+      border-color: var(--spirit-jade);
+      box-shadow: 0 0 18px rgba(0, 229, 163, 0.18);
+    }
+    .glb-slot-card.drag-over {
+      border-style: solid;
+      border-color: var(--immortal-gold);
+      background: rgba(245, 197, 66, 0.15);
+      transform: scale(1.02);
+    }
+    .btn-glb-studio {
+      background: linear-gradient(135deg, rgba(0, 229, 163, 0.22), rgba(245, 197, 66, 0.25));
+      border: 1px solid var(--spirit-jade);
+      color: #e6fff7;
+      font-weight: 700;
+      border-radius: 9px;
+      font-size: 0.82rem;
+      box-shadow: 0 0 12px rgba(0, 229, 163, 0.25);
+      transition: all 0.2s ease;
+    }
+    .btn-glb-studio:hover {
+      background: linear-gradient(135deg, rgba(0, 229, 163, 0.4), rgba(245, 197, 66, 0.4));
+      color: #fff;
+      border-color: var(--immortal-gold);
+      transform: translateY(-1px);
+    }
+
+    /* Responsive adjustments for mobile screens */
+    @media (max-width: 768px) {
+      .hero-slot-card {
+        min-width: 78px;
+        padding: 4px 6px;
+      }
+      .hero-slot-card .hero-desc-text {
+        display: none;
+      }
+      #unit-inspector {
+        max-width: 92vw !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 1. AR Live Camera Background -->
+  <video id="ar-video" autoplay playsinline muted></video>
+
+  <!-- 2. Three.js 3D WebGL Viewport -->
+  <div id="webgl-container"></div>
+
+  <!-- 3. Floating 3D HTML Bars & Combat Text -->
+  <div id="world-ui-layer"></div>
+
+  <!-- 4. 2D Gesture Spellcasting Canvas (Họa Phù) -->
+  <canvas id="spell-canvas"></canvas>
+
+  <!-- 5. Main Interactive HUD Overlay -->
+  <div id="hud-layer">
+
+    <!-- TOP BAR -->
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+      <!-- Left: Game Title, Wave & Realm Status -->
+      <div class="xianxia-panel interactive-ui px-3 py-2 d-flex flex-wrap align-items-center gap-2">
+        <div>
+          <div class="d-flex align-items-center gap-2">
+            <span class="xianxia-title fw-bold fs-6">ĐẤU TRƯỜNG KHÔI LỖI AR</span>
+            <span id="realm-display" class="realm-badge">Luyện Khí Tầng 1</span>
+          </div>
+          <div class="d-flex align-items-center gap-3 small text-light opacity-75 mt-1">
+            <span><i class="bi bi-layers-fill text-warning me-1"></i>Ải: <strong id="wave-number" class="text-white">1</strong></span>
+            <span><i class="bi bi-gem text-info me-1"></i>Linh Thạch: <strong id="spirit-stones" class="text-info">60</strong></span>
+            <span><i class="bi bi-trophy-fill text-warning me-1"></i>Kỷ Lục: <strong id="best-wave" class="text-warning">1</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Center: Proximity Buff & Boss Danger Alert -->
+      <div class="d-flex flex-column align-items-center gap-1">
+        <div id="proximity-banner" class="interactive-ui">
+          <i class="bi bi-stars me-1"></i>Zoom gần Khôi Lỗi để kích hoạt <strong>Linh Khí Nhập Thể (+35% Tốc Đánh)</strong>
+        </div>
+        <div id="boss-telegraph-alert" class="interactive-ui">
+          <i class="bi bi-exclamation-triangle-fill me-1"></i>YÊU VƯƠNG GIÁNG ĐÒN! KÉO KHÔI LỖI KHỎI Ô ĐỎ NGAY!
+        </div>
+        <div id="spell-mode-hint" class="xianxia-panel px-3 py-1 text-warning small fw-bold" style="display:none;">
+          <i class="bi bi-brush-fill me-1"></i>Vẽ nét Dọc <kbd>|</kbd> (Thiên Lôi), Tròn <kbd>O</kbd> (Hồi Máu), hoặc Chéo <kbd>/</kbd> (Cuồng Huyết) lên màn hình!
+        </div>
+      </div>
+
+      <!-- Right: AR Controls, Board Calibration & Audio -->
+      <div class="xianxia-panel interactive-ui px-2 py-2 d-flex flex-wrap align-items-center gap-1">
+        <button id="btn-open-glb-studio" class="btn btn-glb-studio btn-sm me-1" data-bs-toggle="modal" data-bs-target="#glbStudioModal" title="Tải file .GLB / .GLTF của bạn vào game">
+          📦 Nạp GLB <span id="glb-active-count" class="badge bg-warning text-dark ms-1">0/8</span>
+        </button>
+        <button id="btn-toggle-ar" class="btn btn-xianxia-dark btn-sm" title="Bật/Tắt Camera AR Thực Tế">
+          <i class="bi bi-camera-video me-1"></i><span id="ar-btn-label">Bật Camera AR</span>
+        </button>
+        <button id="btn-ar-calibrate" class="btn btn-xianxia-dark btn-sm" title="Đặt & Căn chỉnh vị trí Bàn Cờ AR">
+          <i class="bi bi-bounding-box-circles me-1"></i>Đặt Bàn Cờ
+        </button>
+        <button id="btn-gyro" class="btn btn-xianxia-dark btn-sm" title="Đồng bộ góc nghiêng điện thoại">
+          <i class="bi bi-compass"></i>
+        </button>
+        <div class="d-flex align-items-center px-2 border-start border-secondary ms-1">
+          <i class="bi bi-arrows-angle-expand text-warning small me-1" title="Thu phóng Sa Bàn"></i>
+          <input id="board-scale-slider" type="range" class="form-range" min="0.5" max="1.8" step="0.05" value="1.0" style="width: 68px;" />
+        </div>
+        <button id="btn-reset-cam" class="btn btn-xianxia-dark btn-sm" title="Đặt lại góc nhìn">
+          <i class="bi bi-arrow-counterclockwise"></i>
+        </button>
+        <button id="btn-audio" class="btn btn-xianxia-dark btn-sm active" title="Bật/Tắt Âm Thanh">
+          <i id="audio-icon" class="bi bi-volume-up-fill"></i>
+        </button>
+        <button class="btn btn-xianxia-dark btn-sm" data-bs-toggle="modal" data-bs-target="#guideModal" title="Cẩm Nang Tu Tiên">
+          <i class="bi bi-journal-richtext"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- AR BOARD CALIBRATION FLOATING DRAWER -->
+    <div id="ar-calibration-panel" class="xianxia-panel interactive-ui p-3 align-self-end mt-1" style="width: 310px; display: none;">
+      <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-1 mb-2">
+        <span class="fw-bold text-warning small"><i class="bi bi-arrows-move me-1"></i>Định Vị Sa Bàn AR Trên Mặt Bàn</span>
+        <button id="btn-close-ar-cal" class="btn btn-sm text-light p-0"><i class="bi bi-x-lg"></i></button>
+      </div>
+      <div class="small mb-2">
+        <div class="d-flex justify-content-between"><span>Dịch Ngang (Trái/Phải X):</span><strong id="cal-x-val">0.0</strong></div>
+        <input id="cal-pos-x" type="range" class="form-range" min="-3.0" max="3.0" step="0.1" value="0" />
+      </div>
+      <div class="small mb-2">
+        <div class="d-flex justify-content-between"><span>Độ Cao Mặt Bàn (Y):</span><strong id="cal-y-val">0.0</strong></div>
+        <input id="cal-pos-y" type="range" class="form-range" min="-2.5" max="2.0" step="0.1" value="0" />
+      </div>
+      <div class="small mb-2">
+        <div class="d-flex justify-content-between"><span>Khoảng Cách Xa/Gần (Z):</span><strong id="cal-z-val">0.0</strong></div>
+        <input id="cal-pos-z" type="range" class="form-range" min="-3.5" max="3.0" step="0.1" value="0" />
+      </div>
+      <div class="d-flex gap-2 mt-2">
+        <button id="btn-reset-ar-cal" class="btn btn-xianxia-dark btn-sm w-50">Mặc Định</button>
+        <button id="btn-lock-ar-cal" class="btn btn-xianxia-gold btn-sm w-50">Khóa Vị Trí</button>
+      </div>
+    </div>
+
+    <!-- MIDDLE INSPECTOR & ELEMENTAL LEGEND -->
+    <div class="d-flex justify-content-between align-items-end my-auto pointer-events-none">
+      <!-- Selected Unit Inspector Panel -->
+      <div id="unit-inspector" class="xianxia-panel interactive-ui p-3" style="width: 280px; display: none;">
+        <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-2 mb-2">
+          <div>
+            <h6 id="insp-name" class="mb-0 fw-bold text-warning">Kiếm Tu</h6>
+            <span id="insp-role" class="badge bg-dark border border-secondary text-light small">Sát Thương Chí Mạng</span>
+          </div>
+          <button id="btn-close-inspector" class="btn btn-sm text-secondary p-0"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="row g-1 small mb-2">
+          <div class="col-6">❤️ Khí Huyết: <strong id="insp-hp" class="text-white">850/850</strong></div>
+          <div class="col-6">⚔️ Công Kích: <strong id="insp-atk" class="text-warning">95</strong></div>
+          <div class="col-6">🛡️ Hộ Thể: <strong id="insp-def" class="text-info">25</strong></div>
+          <div class="col-6">⚡ Tốc Đánh: <strong id="insp-spd" class="text-success">1.1/s</strong></div>
+        </div>
+        <div id="insp-tile-buff" class="small text-info mb-2"></div>
+        <div class="small bg-dark bg-opacity-50 p-2 rounded border border-secondary mb-2">
+          <div class="text-warning fw-bold" id="insp-ult-name">Tuyệt Kỹ: Vạn Kiếm Quy Tông</div>
+          <div class="text-light opacity-75" style="font-size: 0.74rem;" id="insp-ult-desc">Triệu hồi 12 thanh cự kiếm từ chín tầng trời.</div>
+        </div>
+        <div class="small">
+          <span class="text-secondary">Pháp Bảo Bản Mệnh:</span>
+          <div id="insp-relics" class="d-flex flex-wrap gap-1 mt-1">
+            <span class="text-muted fst-italic" style="font-size:0.75rem;">Chưa trang bị</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTTOM DOCK: HERO ROSTER, TALISMAN SPELLS & ACTION CONTROLS -->
+    <div class="d-flex flex-column gap-2">
+
+      <!-- Row 1: Elemental Nodes Legend & Active Talisman Bar -->
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <!-- Elemental Nodes Info -->
+        <div class="xianxia-panel interactive-ui px-3 py-1 d-none d-md-flex align-items-center gap-2">
+          <span class="small text-secondary fw-semibold">Mắt Trận Ngũ Hành:</span>
+          <span class="element-pill" style="background:rgba(255,60,60,0.2); color:#ff8585; border:1px solid #ff4d4d;">🔥 Hỏa (+40% Công)</span>
+          <span class="element-pill" style="background:rgba(56,189,248,0.2); color:#7dd3fc; border:1px solid #38bdf8;">💧 Thủy (+15 Mana/s)</span>
+          <span class="element-pill" style="background:rgba(245,197,66,0.2); color:#fde047; border:1px solid #f5c542;">🛡️ Kim (+Giáp & Khiên)</span>
+          <span class="element-pill" style="background:rgba(0,229,163,0.2); color:#6ee7b7; border:1px solid #00e5a3;">🌿 Mộc (+Hồi Máu)</span>
+        </div>
+
+        <!-- Họa Phù (Spellcasting Buttons + Gesture Mode Toggle) -->
+        <div class="xianxia-panel interactive-ui px-2 py-1 d-flex flex-wrap align-items-center gap-1 ms-auto">
+          <button id="btn-draw-mode" class="btn btn-xianxia-dark btn-sm fw-bold text-warning">
+            <i class="bi bi-magic me-1"></i>Họa Phù (Vẽ Bùa)
+          </button>
+          <button id="btn-spell-thunder" class="talisman-btn" title="Vẽ nét dọc (|) hoặc bấm để giáng Thiên Lôi toàn sân">
+            ⚡ Thiên Lôi <span class="badge bg-dark text-info ms-1">30💎</span>
+          </button>
+          <button id="btn-spell-heal" class="talisman-btn" title="Vẽ hình tròn (O) hoặc bấm để hồi 35% HP & tạo khiên">
+            🪷 Thanh Liên <span class="badge bg-dark text-info ms-1">25💎</span>
+          </button>
+          <button id="btn-spell-frenzy" class="talisman-btn" title="Vẽ nét chéo (/) hoặc bấm để +50% Tốc Đánh toàn đội">
+            🔥 Cuồng Huyết <span class="badge bg-dark text-info ms-1">25💎</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Row 2: 4 Cultivator Cards & Start Combat Button -->
+      <div class="xianxia-panel interactive-ui p-2 d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <!-- 4 Class Roster Cards -->
+        <div id="hero-dock" class="d-flex flex-wrap align-items-center gap-2">
+          <!-- Populated dynamically by JS -->
+        </div>
+
+        <!-- Phase Status & Primary Action Button -->
+        <div class="d-flex align-items-center gap-2 ms-auto">
+          <div class="text-end d-none d-sm-block me-1">
+            <div id="phase-status-title" class="small fw-bold text-warning">GIAI ĐOẠN BÀY TRẬN</div>
+            <div id="phase-status-sub" class="text-light opacity-75" style="font-size: 0.74rem;">Kéo thả Khôi Lỗi vào Mắt Trận trên bàn cờ</div>
+          </div>
+          <button id="btn-start-wave" class="btn btn-xianxia-gold px-4 py-2 fs-6">
+            <i class="bi bi-play-fill me-1"></i>KHAI CHIẾN
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ROGUELITE CARD DRAFT MODAL (CƠ DUYÊN TRUYỀN THỪA) -->
+  <div class="modal fade" id="draftModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content xianxia-panel border-warning">
+        <div class="modal-header border-bottom border-secondary">
+          <div>
+            <h5 class="modal-title xianxia-title mb-0">✨ THIÊN ĐẠO CƠ DUYÊN - THƯỞNG VƯỢT ẢI</h5>
+            <small class="text-light opacity-75">Chọn 1 Công Pháp hoặc Pháp Bảo Bản Mệnh để cường hóa đội hình Khôi Lỗi</small>
+          </div>
+          <span class="badge bg-warning text-dark fw-bold fs-6" id="draft-wave-badge">Ải 1 Hoàn Tất</span>
+        </div>
+        <div class="modal-body py-4">
+          <div id="draft-cards-container" class="row g-3">
+            <!-- 3 Random Cards injected by JS -->
+          </div>
+        </div>
+        <div class="modal-footer border-top border-secondary justify-content-between">
+          <span class="small text-info"><i class="bi bi-gem me-1"></i>Có thể dùng 15 Linh Thạch để Đổi Cơ Duyên (Reroll)</span>
+          <button id="btn-reroll-draft" class="btn btn-xianxia-dark btn-sm">
+            <i class="bi bi-shuffle me-1"></i>Đổi Quẻ (15 💎)
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GAME OVER / REINCARNATION MODAL -->
+  <div class="modal fade" id="gameOverModal" data-bs-backdrop="static" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content xianxia-panel text-center p-4">
+        <h3 class="xianxia-title text-danger mb-2">ĐẠO CƠ TAN VỠ - ĐỘ KIẾP THẤT BẠI</h3>
+        <p class="text-light opacity-75 small mb-3">Toàn bộ Khôi Lỗi Bản Mệnh đã cạn kiệt linh lực trước làn sóng Yêu Thú.</p>
+        <div class="bg-dark bg-opacity-75 rounded p-3 border border-secondary mb-4">
+          <div class="row g-2">
+            <div class="col-6 border-end border-secondary">
+              <div class="small text-secondary">Ải Đạt Được</div>
+              <div id="go-wave" class="fs-4 fw-bold text-warning">Ải 1</div>
+            </div>
+            <div class="col-6">
+              <div class="small text-secondary">Cảnh Giới Tu Vi</div>
+              <div id="go-realm" class="fs-5 fw-bold text-info">Luyện Khí</div>
+            </div>
+          </div>
+        </div>
+        <button id="btn-restart-game" class="btn btn-xianxia-gold w-100 py-2">
+          <i class="bi bi-arrow-repeat me-2"></i>LUÂN HỒI CHUYỂN THẾ (CHƠI LẠI)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GUIDE / CẨM NANG MODAL -->
+  <div class="modal fade" id="guideModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content xianxia-panel">
+        <div class="modal-header border-bottom border-secondary">
+          <h5 class="modal-title xianxia-title">📜 CẨM NANG TRẬN PHÁP SƯ AR</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body small leading-relaxed">
+          <h6 class="text-warning fw-bold">1. Tương Tác Không Gian AR ("Linh Khí Nhập Thể")</h6>
+          <p>Bạn có thể bật <strong>Camera AR</strong> để đặt bàn cờ Bát Quái ngay trên mặt bàn thực tế. Khi đang giao chiến, hãy <strong>đưa điện thoại / Zoom camera lại gần một Khôi Lỗi bất kỳ</strong> để truyền Linh Khí trực tiếp, giúp nhân vật đó phát sáng hào quang vàng và nhận ngay <strong>+35% Tốc Đánh & +20% Tỷ Lệ Chí Mạng</strong>!</p>
+
+          <h6 class="text-warning fw-bold mt-3">2. Tứ Đại Khôi Lỗi & Tuyệt Kỹ</h6>
+          <ul>
+            <li><strong class="text-info">Kiếm Tu (Phi Kiếm Đoạt Mệnh):</strong> Phóng phi kiếm tầm xa. Khi đầy Mana, thi triển <em>Vạn Kiếm Quy Tông</em> triệu hồi 12 thanh cự kiếm từ thiên không cắm xuống trận địa.</li>
+            <li><strong style="color:#c084fc;">Pháp Tu (Ngũ Hành Chưởng Khống):</strong> Phép thuật diện rộng. Tuyệt kỹ <em>Cửu Thiên Lôi Pháp</em> vẽ vòng trận pháp dưới cụm quái đông nhất và giáng Lôi Kiếp.</li>
+            <li><strong class="text-warning">Thể Tu (Kim Thân Bất Hoại):</strong> Đấu sĩ hàng đầu. Tuyệt kỹ <em>Bất Diệt Kim Thân</em> tạo khiên chắn 35% Máu tối đa và dậm chấn động làm Choáng quái xung quanh 1.8 giây.</li>
+            <li><strong class="text-danger">Quỷ Tu (Câu Hồn Đoạt Phách):</strong> Đòn đánh hút máu. Tuyệt kỹ <em>Bách Quỷ Dạ Hành</em> hút sinh lực kẻ địch yếu nhất và triệu hồi 1 <strong>Quỷ Nô</strong> lên ô cờ trống để trợ chiến.</li>
+          </ul>
+
+          <h6 class="text-warning fw-bold mt-3">3. Bày Trận, Họa Phù & Né Đòn Boss</h6>
+          <ul>
+            <li><strong>Mắt Trận Ngũ Hành:</strong> Mỗi ải sẽ xuất hiện 4 ô phát sáng (Hỏa, Thủy, Kim, Mộc). Kéo Khôi Lỗi đặt lên ô tương ứng để nhận Buff mạnh mẽ.</li>
+            <li><strong>Độn Không Cấp Cứu:</strong> Mỗi 3 ải, <em>Cửu U Yêu Vương</em> xuất hiện và báo hiệu vùng đập kiếm màu đỏ trước 2 giây. Bạn có thể <strong>nắm kéo Khôi Lỗi ngay trong lúc đang đánh nhau</strong> sang ô an toàn (hồi chiêu 5 giây)!</li>
+            <li><strong>Họa Phù (Vẽ Bùa):</strong> Bấm nút <em>Họa Phù</em> rồi vẽ nét thẳng dọc <code>|</code> (Thiên Lôi), hình tròn <code>O</code> (Thanh Liên Hồi Phục), hoặc nét chéo <code>/</code> (Cuồng Huyết) lên màn hình.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MANUAL .GLB / .GLTF MODEL IMPORT & CUSTOMIZATION STUDIO MODAL -->
+  <div class="modal fade" id="glbStudioModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content xianxia-panel border-info">
+        <div class="modal-header border-bottom border-secondary">
+          <div>
+            <h5 class="modal-title xianxia-title mb-0">📦 XƯỞNG LUYỆN CHẾ KHÔI LỖI - QUẢN LÝ MODEL 3D (.GLB / .GLTF)</h5>
+            <small class="text-light opacity-75">
+              Chọn file <code>.glb</code> từ máy hoặc <strong>Kéo-Thả trực tiếp file .glb</strong> vào từng ô bên dưới. Tự động chuẩn hóa kích thước, lưu vào trình duyệt (IndexedDB) và thay thế tức thì trên bàn cờ!
+            </small>
+          </div>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 p-2 rounded bg-dark bg-opacity-75 border border-secondary">
+            <div class="small text-info">
+              <i class="bi bi-hdd-stack-fill me-1"></i><strong>Tự động lưu trữ:</strong> Các model <code>.glb</code> bạn tải lên được lưu sẵn trong bộ nhớ trình duyệt, không bị mất khi tải lại trang.
+            </div>
+            <div class="d-flex gap-2">
+              <button id="btn-clear-all-glb" class="btn btn-outline-danger btn-sm">
+                <i class="bi bi-trash3 me-1"></i>Xóa Tất Cả GLB (Về Mặc Định)
+              </button>
+            </div>
+          </div>
+
+          <!-- 8 Dedicated Model Slots Grid -->
+          <div id="glb-slots-grid" class="row g-3">
+            <!-- Populated dynamically by GLBModelStudio -->
+          </div>
+        </div>
+        <div class="modal-footer border-top border-secondary justify-content-between">
+          <span class="small text-warning">
+            <i class="bi bi-lightbulb-fill me-1"></i>Mẹo: Nếu model <code>.glb</code> bị quay lưng về phía quái khi đánh, hãy bấm nút <strong>"🔄 Xoay 180°"</strong> ở ô của model đó.
+          </span>
+          <button type="button" class="btn btn-xianxia-gold px-4" data-bs-dismiss="modal">Hoàn Tất & Quay Lại Bàn Cờ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap 5 JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Three.js r128, OrbitControls, GLTFLoader & SkeletonUtils -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
+
+  <script>
+    /***************************************************************************
+     * 1. PROCEDURAL WEB AUDIO SYNTHESIZER (NO EXTERNAL MP3 REQUIRED)
+     ***************************************************************************/
+    class SoundFX {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) this.ctx = new AudioCtx();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      playSwordSlash() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(920, now);
+        osc.frequency.exponentialRampToValueAtTime(180, now + 0.14);
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.15);
+      }
+
+      playMagicBolt() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(520, now);
+        osc.frequency.exponentialRampToValueAtTime(1180, now + 0.18);
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.19);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.19);
+      }
+
+      playThunderStrike() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        // White noise burst + sub bass drop
+        const bufferSize = this.ctx.sampleRate * 0.45;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.ctx.sampleRate * 0.15));
+        }
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(950, now);
+        filter.frequency.linearRampToValueAtTime(140, now + 0.45);
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.32, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
+        noise.start(now);
+      }
+
+      playHeavySlam() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.exponentialRampToValueAtTime(32, now + 0.32);
+        gain.gain.setValueAtTime(0.35, now);
+        gain.gain.exponentialRampToValueAtTime(0.005, now + 0.34);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.35);
+      }
+
+      playChime(freq = 660) {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now);
+        osc.frequency.exponentialRampToValueAtTime(freq * 1.5, now + 0.25);
+        gain.gain.setValueAtTime(0.14, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.26);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.27);
+      }
+
+      playVictoryFanfare() {
+        if (!this.enabled) return;
+        const notes = [523.25, 659.25, 783.99, 1046.5];
+        notes.forEach((n, idx) => {
+          setTimeout(() => this.playChime(n), idx * 95);
+        });
+      }
+    }
+
+    const sfx = new SoundFX();
+
+    /***************************************************************************
+     * 1B. MANUAL .GLB / .GLTF MODEL STUDIO & INDEXEDDB STORAGE MANAGER
+     ***************************************************************************/
+    const GLB_SLOT_DEFINITIONS = [
+      { slotId: 'kiem_tu', name: 'Kiếm Tu', role: 'Hero • Sát Thương Chí Mạng', badge: 'Khôi Lỗi Chính', color: '#2de2e6', targetHeight: 1.15, isHero: true },
+      { slotId: 'phap_tu', name: 'Pháp Tu', role: 'Hero • Phép Thuật Diện Rộng', badge: 'Khôi Lỗi Chính', color: '#c084fc', targetHeight: 1.15, isHero: true },
+      { slotId: 'the_tu', name: 'Thể Tu', role: 'Hero • Đỡ Đòn & Khống Chế', badge: 'Khôi Lỗi Chính', color: '#f5c542', targetHeight: 1.22, isHero: true },
+      { slotId: 'quy_tu', name: 'Quỷ Tu', role: 'Hero • Hút Máu & Triệu Hồi', badge: 'Khôi Lỗi Chính', color: '#ff2a54', targetHeight: 1.15, isHero: true },
+      { slotId: 'tieuyeu', name: 'Tiểu Yêu / Hắc Giáp', role: 'Quái Thường (Golem/Tiểu Yêu)', badge: 'Yêu Thú', color: '#a855f7', targetHeight: 1.05, isHero: false },
+      { slotId: 'huyet_lang', name: 'Huyết Lang Tinh Anh', role: 'Quái Tốc Độ Cao', badge: 'Yêu Thú', color: '#fb7185', targetHeight: 0.95, isHero: false },
+      { slotId: 'boss_yeu_vuong', name: 'Cửu U Yêu Vương', role: 'Boss Mỗi 3 Ải', badge: 'Yêu Vương Boss', color: '#ff0055', targetHeight: 1.75, isHero: false },
+      { slotId: 'quy_no', name: 'Quỷ Nô Triệu Hồi', role: 'Đệ Tử Của Quỷ Tu', badge: 'Triệu Hồi', color: '#f43f5e', targetHeight: 0.85, isHero: false }
+    ];
+
+    class GLBModelStudio {
+      constructor(onSlotUpdated) {
+        this.onSlotUpdated = onSlotUpdated;
+        this.loader = new THREE.GLTFLoader();
+        this.dbName = 'PuppetArenaGLBStore';
+        this.storeName = 'models';
+        this.db = null;
+
+        // Map slotId -> { gltf, fileName, animations, settings: { scale, rotY, offsetY, keepHalo, animIndex } }
+        this.loadedSlots = new Map();
+        GLB_SLOT_DEFINITIONS.forEach(def => {
+          this.loadedSlots.set(def.slotId, {
+            gltf: null,
+            fileName: null,
+            animations: [],
+            settings: {
+              scale: 1.0,
+              rotY: 0,
+              offsetY: 0,
+              keepHalo: true,
+              animIndex: -1 // -1 = Auto (first clip if available)
+            }
+          });
+        });
+
+        this.renderStudioCards();
+        this.initDatabase().then(() => this.restoreAllFromDB());
+      }
+
+      async initDatabase() {
+        return new Promise((resolve) => {
+          if (!window.indexedDB) {
+            resolve();
+            return;
+          }
+          const req = indexedDB.open(this.dbName, 1);
+          req.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains(this.storeName)) {
+              db.createObjectStore(this.storeName, { keyPath: 'slotId' });
+            }
+          };
+          req.onsuccess = (e) => {
+            this.db = e.target.result;
+            resolve();
+          };
+          req.onerror = () => resolve();
+        });
+      }
+
+      async saveSlotToDB(slotId, buffer, fileName, settings) {
+        if (!this.db) return;
+        return new Promise((resolve) => {
+          try {
+            const tx = this.db.transaction(this.storeName, 'readwrite');
+            const store = tx.objectStore(this.storeName);
+            store.put({ slotId, buffer, fileName, settings });
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => resolve();
+          } catch (_) {
+            resolve();
+          }
+        });
+      }
+
+      async updateSlotSettingsInDB(slotId) {
+        if (!this.db) return;
+        const entry = this.loadedSlots.get(slotId);
+        if (!entry || !entry.rawBuffer) return;
+        await this.saveSlotToDB(slotId, entry.rawBuffer, entry.fileName, entry.settings);
+      }
+
+      async deleteSlotFromDB(slotId) {
+        if (!this.db) return;
+        return new Promise((resolve) => {
+          try {
+            const tx = this.db.transaction(this.storeName, 'readwrite');
+            tx.objectStore(this.storeName).delete(slotId);
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => resolve();
+          } catch (_) {
+            resolve();
+          }
+        });
+      }
+
+      async restoreAllFromDB() {
+        if (!this.db) return;
+        try {
+          const tx = this.db.transaction(this.storeName, 'readonly');
+          const store = tx.objectStore(this.storeName);
+          const req = store.getAll();
+          req.onsuccess = () => {
+            const records = req.result || [];
+            records.forEach(rec => {
+              if (rec && rec.slotId && rec.buffer) {
+                this.parseAndRegisterGLB(rec.slotId, rec.buffer, rec.fileName, rec.settings, false);
+              }
+            });
+          };
+        } catch (_) {}
+      }
+
+      parseAndRegisterGLB(slotId, arrayBuffer, fileName, savedSettings = null, persistToDB = true) {
+        this.loader.parse(
+          arrayBuffer,
+          '',
+          (gltf) => {
+            const entry = this.loadedSlots.get(slotId);
+            if (!entry) return;
+            entry.gltf = gltf;
+            entry.rawBuffer = arrayBuffer;
+            entry.fileName = fileName;
+            entry.animations = gltf.animations || [];
+            if (savedSettings) {
+              entry.settings = { ...entry.settings, ...savedSettings };
+            }
+            if (persistToDB) {
+              this.saveSlotToDB(slotId, arrayBuffer, fileName, entry.settings);
+            }
+            this.updateSlotCardUI(slotId);
+            this.updateActiveBadgeCount();
+            sfx.playVictoryFanfare();
+            if (this.onSlotUpdated) this.onSlotUpdated(slotId);
+          },
+          (err) => {
+            console.error('Lỗi đọc file GLB:', err);
+          }
+        );
+      }
+
+      clearSlot(slotId) {
+        const entry = this.loadedSlots.get(slotId);
+        if (!entry) return;
+        entry.gltf = null;
+        entry.rawBuffer = null;
+        entry.fileName = null;
+        entry.animations = [];
+        entry.settings = { scale: 1.0, rotY: 0, offsetY: 0, keepHalo: true, animIndex: -1 };
+        this.deleteSlotFromDB(slotId);
+        this.updateSlotCardUI(slotId);
+        this.updateActiveBadgeCount();
+        sfx.playChime(420);
+        if (this.onSlotUpdated) this.onSlotUpdated(slotId);
+      }
+
+      clearAllSlots() {
+        GLB_SLOT_DEFINITIONS.forEach(def => this.clearSlot(def.slotId));
+      }
+
+      hasCustomModel(slotId) {
+        const entry = this.loadedSlots.get(slotId);
+        return !!(entry && entry.gltf);
+      }
+
+      updateActiveBadgeCount() {
+        let count = 0;
+        this.loadedSlots.forEach(v => {
+          if (v.gltf) count++;
+        });
+        const badge = document.getElementById('glb-active-count');
+        if (badge) badge.textContent = `${count}/8`;
+      }
+
+      /**
+       * Builds a normalized, shadow-ready, material-cloned 3D instance of the user's .GLB model
+       */
+      buildInstanceForSlot(slotId, existingParts = null) {
+        const entry = this.loadedSlots.get(slotId);
+        const def = GLB_SLOT_DEFINITIONS.find(d => d.slotId === slotId);
+        if (!entry || !entry.gltf || !def) return null;
+
+        // Clone skinned or standard hierarchy properly
+        const clonedScene = (THREE.SkeletonUtils && THREE.SkeletonUtils.clone)
+          ? THREE.SkeletonUtils.clone(entry.gltf.scene)
+          : entry.gltf.scene.clone(true);
+
+        // Enhance PBR materials & enable shadows per instance
+        const instanceMaterials = [];
+        clonedScene.traverse(node => {
+          if (node.isMesh) {
+            node.castShadow = true;
+            node.receiveShadow = true;
+            if (node.material) {
+              if (Array.isArray(node.material)) {
+                node.material = node.material.map(m => {
+                  const cm = m.clone();
+                  this.tunePBRMaterial(cm);
+                  instanceMaterials.push(cm);
+                  return cm;
+                });
+              } else {
+                const cm = node.material.clone();
+                this.tunePBRMaterial(cm);
+                node.material = cm;
+                instanceMaterials.push(cm);
+              }
+            }
+          }
+        });
+
+        // Compute raw bounding box to auto-normalize scale & ground alignment
+        clonedScene.position.set(0, 0, 0);
+        clonedScene.rotation.set(0, 0, 0);
+        clonedScene.scale.set(1, 1, 1);
+        clonedScene.updateMatrixWorld(true);
+
+        const box = new THREE.Box3().setFromObject(clonedScene);
+        const size = new THREE.Vector3();
+        const center = new THREE.Vector3();
+        box.getSize(size);
+        box.getCenter(center);
+
+        const maxDim = Math.max(size.y, size.x, size.z, 0.001);
+        const autoNormScale = def.targetHeight / maxDim;
+
+        const normWrapper = new THREE.Group();
+        clonedScene.position.set(
+          -center.x * autoNormScale,
+          -box.min.y * autoNormScale,
+          -center.z * autoNormScale
+        );
+        clonedScene.scale.setScalar(autoNormScale);
+        normWrapper.add(clonedScene);
+
+        // Apply user per-slot customization (Scale, Rotation Y, Y-Offset)
+        const userHolder = new THREE.Group();
+        userHolder.add(normWrapper);
+        this.applyUserTransformsToHolder(slotId, userHolder);
+
+        // Setup AnimationMixer if GLB contains skeletal animations
+        let mixer = null;
+        let activeAction = null;
+        if (entry.animations && entry.animations.length > 0) {
+          mixer = new THREE.AnimationMixer(clonedScene);
+          const idx = entry.settings.animIndex >= 0 && entry.settings.animIndex < entry.animations.length
+            ? entry.settings.animIndex
+            : 0;
+          activeAction = mixer.clipAction(entry.animations[idx]);
+          activeAction.play();
+        }
+
+        return {
+          userHolder,
+          clonedScene,
+          mixer,
+          activeAction,
+          instanceMaterials,
+          keepHalo: entry.settings.keepHalo
+        };
+      }
+
+      tunePBRMaterial(mat) {
+        if ('metalness' in mat && mat.metalness > 0.65) {
+          mat.metalness = 0.52;
+        }
+        if ('roughness' in mat) {
+          mat.roughness = Math.max(0.25, mat.roughness ?? 0.45);
+        }
+        mat.needsUpdate = true;
+      }
+
+      applyUserTransformsToHolder(slotId, holder) {
+        const entry = this.loadedSlots.get(slotId);
+        if (!entry || !holder) return;
+        const s = entry.settings;
+        holder.scale.setScalar(s.scale);
+        holder.rotation.y = THREE.MathUtils.degToRad(s.rotY);
+        holder.position.y = s.offsetY;
+      }
+
+      renderStudioCards() {
+        const grid = document.getElementById('glb-slots-grid');
+        if (!grid) return;
+        grid.innerHTML = '';
+
+        GLB_SLOT_DEFINITIONS.forEach(def => {
+          const col = document.createElement('div');
+          col.className = 'col-12 col-md-6 col-lg-3';
+          col.innerHTML = `
+            <div class="glb-slot-card h-100 d-flex flex-column justify-content-between" id="glb-card-${def.slotId}">
+              <div>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span class="fw-bold" style="color:${def.color};">${def.name}</span>
+                  <span class="badge bg-dark border border-secondary" style="font-size:0.68rem;">${def.badge}</span>
+                </div>
+                <div class="text-secondary mb-2" style="font-size:0.74rem;">${def.role}</div>
+
+                <!-- Status Pill -->
+                <div id="glb-status-${def.slotId}" class="small mb-2 px-2 py-1 rounded bg-dark text-secondary text-truncate">
+                  <i class="bi bi-box me-1"></i>Đang dùng Model 3D Mặc Định
+                </div>
+
+                <!-- File Upload Input -->
+                <label class="btn btn-xianxia-dark btn-sm w-100 mb-2">
+                  <i class="bi bi-upload me-1"></i>Chọn File .GLB / .GLTF
+                  <input type="file" accept=".glb,.gltf" class="d-none" id="glb-input-${def.slotId}" />
+                </label>
+
+                <!-- Real-time Transform Controls -->
+                <div class="bg-dark bg-opacity-50 p-2 rounded border border-secondary small">
+                  <div class="mb-1">
+                    <div class="d-flex justify-content-between" style="font-size:0.72rem;">
+                      <span>Kích cỡ (Scale):</span>
+                      <strong id="glb-scale-val-${def.slotId}" class="text-warning">1.00x</strong>
+                    </div>
+                    <input type="range" class="form-range" min="0.4" max="2.5" step="0.05" value="1.0" id="glb-scale-${def.slotId}" />
+                  </div>
+
+                  <div class="mb-1">
+                    <div class="d-flex justify-content-between align-items-center" style="font-size:0.72rem;">
+                      <span>Hướng mặt (Xoay Y):</span>
+                      <button type="button" class="btn btn-xianxia-dark py-0 px-1" style="font-size:0.68rem;" id="glb-flip-${def.slotId}">🔄 Xoay 180°</button>
+                    </div>
+                    <input type="range" class="form-range" min="-180" max="180" step="5" value="0" id="glb-roty-${def.slotId}" />
+                  </div>
+
+                  <div class="mb-1">
+                    <div class="d-flex justify-content-between" style="font-size:0.72rem;">
+                      <span>Độ cao chân (Y-Offset):</span>
+                      <strong id="glb-offy-val-${def.slotId}" class="text-info">0.00</strong>
+                    </div>
+                    <input type="range" class="form-range" min="-0.5" max="1.0" step="0.05" value="0" id="glb-offy-${def.slotId}" />
+                  </div>
+
+                  <div class="mb-1">
+                    <label class="form-label mb-0" style="font-size:0.72rem;">Animation (.GLB):</label>
+                    <select class="form-select form-select-sm bg-dark text-light border-secondary py-0" style="font-size:0.72rem;" id="glb-anim-${def.slotId}">
+                      <option value="-1">Tự động (Mặc định)</option>
+                    </select>
+                  </div>
+
+                  ${def.isHero ? `
+                  <div class="form-check form-switch mt-2">
+                    <input class="form-check-input" type="checkbox" id="glb-halo-${def.slotId}" checked />
+                    <label class="form-check-label" style="font-size:0.72rem;" for="glb-halo-${def.slotId}">
+                      Giữ Hào Quang & Pháp Bảo 3D
+                    </label>
+                  </div>` : ''}
+                </div>
+              </div>
+
+              <button type="button" class="btn btn-outline-secondary btn-sm w-100 mt-2" id="glb-reset-${def.slotId}" disabled>
+                <i class="bi bi-arrow-counterclockwise me-1"></i>Xóa GLB / Về Mặc Định
+              </button>
+            </div>
+          `;
+          grid.appendChild(col);
+
+          // Bind Events for this slot
+          const cardEl = col.querySelector(`#glb-card-${def.slotId}`);
+          const fileInput = col.querySelector(`#glb-input-${def.slotId}`);
+          const scaleSlider = col.querySelector(`#glb-scale-${def.slotId}`);
+          const rotYSlider = col.querySelector(`#glb-roty-${def.slotId}`);
+          const flipBtn = col.querySelector(`#glb-flip-${def.slotId}`);
+          const offYSlider = col.querySelector(`#glb-offy-${def.slotId}`);
+          const animSelect = col.querySelector(`#glb-anim-${def.slotId}`);
+          const haloCheck = col.querySelector(`#glb-halo-${def.slotId}`);
+          const resetBtn = col.querySelector(`#glb-reset-${def.slotId}`);
+
+          const handleFile = (file) => {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+              this.parseAndRegisterGLB(def.slotId, ev.target.result, file.name, null, true);
+            };
+            reader.readAsArrayBuffer(file);
+          };
+
+          fileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+              handleFile(e.target.files[0]);
+              e.target.value = '';
+            }
+          });
+
+          // Drag & Drop support directly onto slot card
+          cardEl.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            cardEl.classList.add('drag-over');
+          });
+          cardEl.addEventListener('dragleave', () => cardEl.classList.remove('drag-over'));
+          cardEl.addEventListener('drop', (e) => {
+            e.preventDefault();
+            cardEl.classList.remove('drag-over');
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+              handleFile(e.dataTransfer.files[0]);
+            }
+          });
+
+          const onTransformChange = () => {
+            const entry = this.loadedSlots.get(def.slotId);
+            if (!entry) return;
+            entry.settings.scale = parseFloat(scaleSlider.value);
+            entry.settings.rotY = parseFloat(rotYSlider.value);
+            entry.settings.offsetY = parseFloat(offYSlider.value);
+            if (haloCheck) entry.settings.keepHalo = haloCheck.checked;
+            document.getElementById(`glb-scale-val-${def.slotId}`).textContent = `${entry.settings.scale.toFixed(2)}x`;
+            document.getElementById(`glb-offy-val-${def.slotId}`).textContent = entry.settings.offsetY.toFixed(2);
+            this.updateSlotSettingsInDB(def.slotId);
+            if (this.onSlotUpdated) this.onSlotUpdated(def.slotId);
+          };
+
+          scaleSlider.addEventListener('input', onTransformChange);
+          rotYSlider.addEventListener('input', onTransformChange);
+          offYSlider.addEventListener('input', onTransformChange);
+          if (haloCheck) haloCheck.addEventListener('change', onTransformChange);
+
+          flipBtn.addEventListener('click', () => {
+            let cur = parseFloat(rotYSlider.value) || 0;
+            cur = cur >= 0 ? cur - 180 : cur + 180;
+            rotYSlider.value = String(cur);
+            onTransformChange();
+          });
+
+          animSelect.addEventListener('change', () => {
+            const entry = this.loadedSlots.get(def.slotId);
+            if (!entry) return;
+            entry.settings.animIndex = parseInt(animSelect.value, 10);
+            this.updateSlotSettingsInDB(def.slotId);
+            if (this.onSlotUpdated) this.onSlotUpdated(def.slotId);
+          });
+
+          resetBtn.addEventListener('click', () => this.clearSlot(def.slotId));
+        });
+
+        const clearAllBtn = document.getElementById('btn-clear-all-glb');
+        if (clearAllBtn) {
+          clearAllBtn.addEventListener('click', () => this.clearAllSlots());
+        }
+      }
+
+      updateSlotCardUI(slotId) {
+        const entry = this.loadedSlots.get(slotId);
+        if (!entry) return;
+        const cardEl = document.getElementById(`glb-card-${slotId}`);
+        const statusEl = document.getElementById(`glb-status-${slotId}`);
+        const resetBtn = document.getElementById(`glb-reset-${slotId}`);
+        const scaleSlider = document.getElementById(`glb-scale-${slotId}`);
+        const rotYSlider = document.getElementById(`glb-roty-${slotId}`);
+        const offYSlider = document.getElementById(`glb-offy-${slotId}`);
+        const animSelect = document.getElementById(`glb-anim-${slotId}`);
+        const haloCheck = document.getElementById(`glb-halo-${slotId}`);
+
+        if (scaleSlider) scaleSlider.value = String(entry.settings.scale);
+        if (rotYSlider) rotYSlider.value = String(entry.settings.rotY);
+        if (offYSlider) offYSlider.value = String(entry.settings.offsetY);
+        if (haloCheck) haloCheck.checked = !!entry.settings.keepHalo;
+
+        const scaleValEl = document.getElementById(`glb-scale-val-${slotId}`);
+        const offYValEl = document.getElementById(`glb-offy-val-${slotId}`);
+        if (scaleValEl) scaleValEl.textContent = `${entry.settings.scale.toFixed(2)}x`;
+        if (offYValEl) offYValEl.textContent = entry.settings.offsetY.toFixed(2);
+
+        if (entry.gltf) {
+          cardEl?.classList.add('has-custom-glb');
+          if (statusEl) {
+            statusEl.className = 'small mb-2 px-2 py-1 rounded bg-success bg-opacity-25 text-info border border-info text-truncate';
+            statusEl.innerHTML = `<i class="bi bi-check-circle-fill text-success me-1"></i><strong>${entry.fileName}</strong>`;
+          }
+          if (resetBtn) {
+            resetBtn.disabled = false;
+            resetBtn.className = 'btn btn-outline-danger btn-sm w-100 mt-2';
+          }
+          if (animSelect) {
+            animSelect.innerHTML = `<option value="-1">Tự động (${entry.animations.length} clip)</option>`;
+            entry.animations.forEach((clip, idx) => {
+              const opt = document.createElement('option');
+              opt.value = String(idx);
+              opt.textContent = `${idx + 1}. ${clip.name || 'Animation_' + (idx + 1)}`;
+              animSelect.appendChild(opt);
+            });
+            animSelect.value = String(entry.settings.animIndex);
+          }
+        } else {
+          cardEl?.classList.remove('has-custom-glb');
+          if (statusEl) {
+            statusEl.className = 'small mb-2 px-2 py-1 rounded bg-dark text-secondary text-truncate';
+            statusEl.innerHTML = `<i class="bi bi-box me-1"></i>Đang dùng Model 3D Mặc Định`;
+          }
+          if (resetBtn) {
+            resetBtn.disabled = true;
+            resetBtn.className = 'btn btn-outline-secondary btn-sm w-100 mt-2';
+          }
+          if (animSelect) {
+            animSelect.innerHTML = `<option value="-1">Tự động (Mặc định)</option>`;
+          }
+        }
+      }
+    }
+
+    /***************************************************************************
+     * 2. GAME CONFIGURATION, CLASSES & ROGUELITE CARDS
+     ***************************************************************************/
+    const REALM_NAMES = [
+      'Luyện Khí Tầng 1', 'Luyện Khí Đỉnh Phong',
+      'Trúc Cơ Sơ Kỳ', 'Trúc Cơ Viên Mãn',
+      'Kim Đan Đại Thành', 'Nguyên Anh Sơ Kỳ',
+      'Nguyên Anh Đỉnh Phong', 'Hóa Thần Chân Quân',
+      'Luyện Hư Đại Năng', 'Hợp Thể Chí Tôn',
+      'Đại Thừa Tiên Tôn', 'Độ Kiếp Chân Tiên'
+    ];
+
+    const ELEMENT_TYPES = {
+      FIRE: { id: 'FIRE', name: 'Hỏa Liệt Trận', color: 0xff3b3b, desc: '+40% Công Kích', icon: '🔥' },
+      WATER: { id: 'WATER', name: 'Huyền Thủy Trận', color: 0x38bdf8, desc: '+15 Mana/giây', icon: '💧' },
+      METAL: { id: 'METAL', name: 'Kim Cương Trận', color: 0xf5c542, desc: '+35% Giảm Sát Thương & Khiên', icon: '🛡️' },
+      WOOD: { id: 'WOOD', name: 'Thanh Mộc Trận', color: 0x00e5a3, desc: 'Hồi 8% Máu/giây', icon: '🌿' }
+    };
+
+    const HERO_TEMPLATES = {
+      kiem_tu: {
+        id: 'kiem_tu',
+        name: 'Kiếm Tu',
+        title: 'Thanh Liên Kiếm Khách',
+        role: 'Sát Thương Chí Mạng',
+        color: '#2de2e6',
+        hex: 0x2de2e6,
+        maxHp: 820,
+        atk: 96,
+        def: 22,
+        atkSpeed: 1.15,
+        range: 2.8,
+        moveSpeed: 2.6,
+        critChance: 0.28,
+        ultName: 'Vạn Kiếm Quy Tông',
+        ultDesc: 'Triệu hồi 12 thanh Phi Kiếm từ chín tầng trời cắm xuống đội hình địch, gây 260% Công Kích.',
+        defaultCol: 1,
+        defaultRow: 4
+      },
+      phap_tu: {
+        id: 'phap_tu',
+        name: 'Pháp Tu',
+        title: 'Tử Tiêu Đạo Nhân',
+        role: 'Phép Thuật Diện Rộng',
+        color: '#c084fc',
+        hex: 0xc084fc,
+        maxHp: 740,
+        atk: 105,
+        def: 18,
+        atkSpeed: 0.92,
+        range: 4.2,
+        moveSpeed: 2.2,
+        critChance: 0.18,
+        ultName: 'Cửu Thiên Lôi Pháp',
+        ultDesc: 'Bày trận đồ Bát Quái dưới cụm kẻ địch đông nhất và giáng Lôi Kiếp gây 210% sát thương diện rộng.',
+        defaultCol: 2,
+        defaultRow: 5
+      },
+      the_tu: {
+        id: 'the_tu',
+        name: 'Thể Tu',
+        title: 'Kim Cương La Hán',
+        role: 'Đỡ Đòn & Khống Chế',
+        color: '#f5c542',
+        hex: 0xf5c542,
+        maxHp: 1480,
+        atk: 68,
+        def: 48,
+        atkSpeed: 0.9,
+        range: 1.35,
+        moveSpeed: 2.5,
+        critChance: 0.12,
+        ultName: 'Bất Diệt Kim Thân',
+        ultDesc: 'Tạo Kim Chung Tr罩 chắn 35% Máu tối đa và dậm đất làm Choáng toàn bộ quái xung quanh trong 1.8 giây.',
+        defaultCol: 1,
+        defaultRow: 3
+      },
+      quy_tu: {
+        id: 'quy_tu',
+        name: 'Quỷ Tu',
+        title: 'U Minh Huyết Tôn',
+        role: 'Hút Máu & Triệu Hồi',
+        color: '#ff2a54',
+        hex: 0xff2a54,
+        maxHp: 900,
+        atk: 84,
+        def: 26,
+        atkSpeed: 1.08,
+        range: 2.3,
+        moveSpeed: 2.7,
+        critChance: 0.2,
+        ultName: 'Bách Quỷ Dạ Hành',
+        ultDesc: 'Hút sinh huyết của mục tiêu thấp máu nhất và triệu hồi 1 Quỷ Nô tinh anh lên bàn cờ trợ chiến.',
+        defaultCol: 2,
+        defaultRow: 3
+      }
+    };
+
+    const ROGUELITE_CARDS = [
+      {
+        id: 'tru_tien_kiem',
+        name: 'Tru Tiên Kiếm Trận',
+        category: 'Pháp Bảo Bản Mệnh • Kiếm Tu',
+        rarity: 'immortal',
+        icon: '🗡️',
+        desc: 'Kiếm Tu tăng +45% Công Kích, +20% Chí Mạng và triệu hồi thêm 6 thanh thần kiếm khi tung Vạn Kiếm Quy Tông.',
+        target: 'kiem_tu',
+        relicType: 'sword',
+        apply: (game) => {
+          const h = game.getHero('kiem_tu');
+          if (h) {
+            h.baseAtk = Math.round(h.baseAtk * 1.45);
+            h.critChance += 0.2;
+            h.extraSwords = (h.extraSwords || 0) + 6;
+            h.addRelic('Tru Tiên Kiếm', 'sword', 0x2de2e6);
+          }
+        }
+      },
+      {
+        id: 'dong_hoang_chung',
+        name: 'Đông Hoàng Chung',
+        category: 'Pháp Bảo Thái Cổ • Thể Tu',
+        rarity: 'immortal',
+        icon: '🔔',
+        desc: 'Thể Tu +45% Máu tối đa, phản lại 35% sát thương nhận vào và thời gian Choáng của Tuyệt Kỹ tăng lên 2.6 giây.',
+        target: 'the_tu',
+        relicType: 'bell',
+        apply: (game) => {
+          const h = game.getHero('the_tu');
+          if (h) {
+            h.baseMaxHp = Math.round(h.baseMaxHp * 1.45);
+            h.thorns = (h.thorns || 0) + 0.35;
+            h.stunDuration = 2.6;
+            h.addRelic('Đông Hoàng Chung', 'bell', 0xf5c542);
+          }
+        }
+      },
+      {
+        id: 'cuu_thien_loi_chau',
+        name: 'Tử Tiêu Lôi Châu',
+        category: 'Pháp Bảo Bản Mệnh • Pháp Tu',
+        rarity: 'immortal',
+        icon: '🔮',
+        desc: 'Pháp Tu +40% Công Kích và mỗi đòn đánh thường có 35% tỷ lệ giáng thêm một tia Tử Lôi làm tê liệt mục tiêu.',
+        target: 'phap_tu',
+        relicType: 'orb',
+        apply: (game) => {
+          const h = game.getHero('phap_tu');
+          if (h) {
+            h.baseAtk = Math.round(h.baseAtk * 1.4);
+            h.thunderProc = true;
+            h.addRelic('Tử Tiêu Lôi Châu', 'orb', 0xc084fc);
+          }
+        }
+      },
+      {
+        id: 'van_hon_phien',
+        name: 'Vạn Hồn Phiên',
+        category: 'Ma Bảo Thượng Cổ • Quỷ Tu',
+        rarity: 'immortal',
+        icon: '🚩',
+        desc: 'Quỷ Tu tăng hút máu lên 45% và gọi liền 2 Quỷ Nô cuồng bạo mỗi khi thi triển Bách Quỷ Dạ Hành.',
+        target: 'quy_tu',
+        relicType: 'banner',
+        apply: (game) => {
+          const h = game.getHero('quy_tu');
+          if (h) {
+            h.lifesteal = 0.45;
+            h.doubleSummon = true;
+            h.addRelic('Vạn Hồn Phiên', 'banner', 0xff2a54);
+          }
+        }
+      },
+      {
+        id: 'tu_linh_tran',
+        name: 'Tiên Thiên Tụ Linh Trận',
+        category: 'Công Pháp Toàn Đội',
+        rarity: 'gold',
+        icon: '🌀',
+        desc: 'Toàn bộ 4 Khôi Lỗi bắt đầu mỗi ải với 60/100 Mana và tăng +25% tốc độ tích tụ Linh Lực.',
+        apply: (game) => {
+          game.teamBuffs.startingMana += 60;
+          game.teamBuffs.manaGainMult += 0.25;
+        }
+      },
+      {
+        id: 'cuu_chuyen_kim_dan',
+        name: 'Cửu Chuyển Kim Đan',
+        category: 'Tiên Đan Ngàn Năm',
+        rarity: 'gold',
+        icon: '💊',
+        desc: 'Đột phá thể chất: Toàn bộ đội hình tăng +25% Khí Huyết tối đa và +20% Công Kích vĩnh viễn.',
+        apply: (game) => {
+          game.heroes.forEach(h => {
+            h.baseMaxHp = Math.round(h.baseMaxHp * 1.25);
+            h.baseAtk = Math.round(h.baseAtk * 1.2);
+          });
+        }
+      },
+      {
+        id: 'thien_ma_giai_the',
+        name: 'Thiên Ma Giải Thể Đại Pháp',
+        category: 'Cấm Thuật Ma Đạo',
+        rarity: 'immortal',
+        icon: '🩸',
+        desc: 'Toàn đội tăng +50% Tốc Đánh và +35% Công Kích, nhưng khởi đầu hiệp đấu với -15% Máu hiện tại.',
+        apply: (game) => {
+          game.teamBuffs.atkSpeedMult += 0.5;
+          game.teamBuffs.bloodPact = true;
+          game.heroes.forEach(h => {
+            h.baseAtk = Math.round(h.baseAtk * 1.35);
+          });
+        }
+      },
+      {
+        id: 'can_khon_dinh',
+        name: 'Càn Khôn Tạo Hóa Đỉnh',
+        category: 'Tiên Khí Trấn Phái',
+        rarity: 'gold',
+        icon: '⚱️',
+        desc: 'Nhận ngay +75 Linh Thạch 💎 và tăng 50% lượng Linh Thạch rớt ra khi tiêu diệt Yêu Thú.',
+        apply: (game) => {
+          game.addSpiritStones(75);
+          game.teamBuffs.stoneDropMult += 0.5;
+        }
+      },
+      {
+        id: 'thai_cuc_do',
+        name: 'Thái Cực Lưỡng Nghi Đồ',
+        category: 'Trận Pháp Chí Bảo',
+        rarity: 'gold',
+        icon: '☯️',
+        desc: 'Hiệu quả của các ô Mắt Trận Ngũ Hành (Hỏa, Thủy, Kim, Mộc) trên bàn cờ tăng gấp đôi!',
+        apply: (game) => {
+          game.teamBuffs.elementalMult = 2.0;
+        }
+      }
+    ];
+
+    /***************************************************************************
+     * 3. PROCEDURAL 3D ARTICULATED MODEL BUILDER
+     ***************************************************************************/
+    class ProceduralModelFactory {
+      static createCultivatorMesh(type) {
+        const root = new THREE.Group();
+        const bodyGroup = new THREE.Group();
+        root.add(bodyGroup);
+
+        const parts = {
+          root,
+          bodyGroup,
+          head: null,
+          leftArm: null,
+          rightArm: null,
+          weapon: null,
+          haloGroup: new THREE.Group(),
+          shieldDome: null,
+          relicGroup: new THREE.Group()
+        };
+
+        bodyGroup.add(parts.haloGroup);
+        parts.relicGroup.position.set(0, 1.55, 0);
+        bodyGroup.add(parts.relicGroup);
+
+        // Base Pedestal Ring under feet
+        const baseGeo = new THREE.RingGeometry(0.28, 0.36, 24);
+        const baseMat = new THREE.MeshBasicMaterial({
+          color: HERO_TEMPLATES[type].hex,
+          side: THREE.DoubleSide,
+          transparent: true,
+          opacity: 0.75
+        });
+        const baseRing = new THREE.Mesh(baseGeo, baseMat);
+        baseRing.rotation.x = -Math.PI / 2;
+        baseRing.position.y = 0.02;
+        root.add(baseRing);
+        parts.baseRing = baseRing;
+
+        // Shared skin material
+        const skinMat = new THREE.MeshStandardMaterial({ color: 0xffdfc4, roughness: 0.45, metalness: 0.1 });
+
+        if (type === 'kiem_tu') {
+          // Azure Immortal Robe Torso
+          const robeMat = new THREE.MeshStandardMaterial({ color: 0x0f766e, roughness: 0.35, metalness: 0.3 });
+          const trimMat = new THREE.MeshStandardMaterial({ color: 0x2de2e6, emissive: 0x14b8a6, emissiveIntensity: 0.4, metalness: 0.7, roughness: 0.2 });
+          const silverMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.85, roughness: 0.15 });
+
+          const skirt = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.62, 12), robeMat);
+          skirt.position.y = 0.31;
+          skirt.castShadow = true;
+          bodyGroup.add(skirt);
+
+          const chest = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.17, 0.42, 12), robeMat);
+          chest.position.y = 0.72;
+          chest.castShadow = true;
+          bodyGroup.add(chest);
+
+          // Jade Sash & Shoulder Pauldrons
+          const sash = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.035, 8, 20), trimMat);
+          sash.rotation.x = Math.PI / 2;
+          sash.position.y = 0.55;
+          bodyGroup.add(sash);
+
+          const pauldronL = new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 10), silverMat);
+          pauldronL.scale.set(1.2, 0.7, 1);
+          pauldronL.position.set(-0.24, 0.88, 0);
+          const pauldronR = pauldronL.clone();
+          pauldronR.position.x = 0.24;
+          bodyGroup.add(pauldronL, pauldronR);
+
+          // Head & Immortal Topknot Crown
+          const head = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 16), skinMat);
+          head.position.y = 1.08;
+          head.castShadow = true;
+          const hair = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.08, 0.16, 10), new THREE.MeshStandardMaterial({ color: 0x0f172a }));
+          hair.position.y = 0.18;
+          const crown = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.018, 8, 16), trimMat);
+          crown.rotation.x = Math.PI / 2;
+          crown.position.y = 0.18;
+          head.add(hair, crown);
+          bodyGroup.add(head);
+          parts.head = head;
+
+          // Articulated Right Arm holding Glowing Immortal Sword
+          const rightArm = new THREE.Group();
+          rightArm.position.set(0.26, 0.85, 0);
+          const armMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.04, 0.34, 8), robeMat);
+          armMesh.position.y = -0.14;
+          rightArm.add(armMesh);
+
+          const swordGroup = new THREE.Group();
+          swordGroup.position.set(0, -0.28, 0.12);
+          swordGroup.rotation.x = Math.PI / 3;
+          const hilt = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.16, 8), silverMat);
+          const guard = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.03, 0.05), trimMat);
+          guard.position.y = 0.08;
+          const blade = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.68, 0.015), trimMat);
+          blade.position.y = 0.42;
+          swordGroup.add(hilt, guard, blade);
+          rightArm.add(swordGroup);
+          bodyGroup.add(rightArm);
+          parts.rightArm = rightArm;
+          parts.weapon = swordGroup;
+
+          // Halo of 5 Floating Spirit Swords behind back
+          parts.haloGroup.position.set(0, 0.92, -0.22);
+          for (let i = 0; i < 5; i++) {
+            const spiritSword = new THREE.Group();
+            const sBlade = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.48, 4), trimMat);
+            const sGuard = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.02, 0.02), silverMat);
+            sGuard.position.y = -0.2;
+            spiritSword.add(sBlade, sGuard);
+            const angle = (i / 5) * Math.PI - Math.PI / 2;
+            spiritSword.position.set(Math.sin(angle) * 0.42, Math.cos(angle) * 0.35, 0);
+            spiritSword.rotation.z = -angle;
+            parts.haloGroup.add(spiritSword);
+          }
+
+        } else if (type === 'phap_tu') {
+          // Royal Violet & Gold Levitating Mage
+          const robeMat = new THREE.MeshStandardMaterial({ color: 0x4c1d95, roughness: 0.3, metalness: 0.25 });
+          const goldMat = new THREE.MeshStandardMaterial({ color: 0xf5c542, emissive: 0xd97706, emissiveIntensity: 0.35, metalness: 0.85, roughness: 0.15 });
+          const crystalMat = new THREE.MeshStandardMaterial({ color: 0xe879f9, emissive: 0xc026d3, emissiveIntensity: 0.7, roughness: 0.1 });
+
+          bodyGroup.position.y = 0.12; // Levitating
+
+          const robe = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.75, 14), robeMat);
+          robe.position.y = 0.38;
+          robe.castShadow = true;
+          bodyGroup.add(robe);
+
+          const collar = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.04, 8, 20), goldMat);
+          collar.rotation.x = Math.PI / 2;
+          collar.position.y = 0.82;
+          bodyGroup.add(collar);
+
+          const head = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 16), skinMat);
+          head.position.y = 1.04;
+          const daoHat = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.24, 8), goldMat);
+          daoHat.position.y = 0.16;
+          head.add(daoHat);
+          bodyGroup.add(head);
+          parts.head = head;
+
+          // Celestial Staff with Orbiting Crystal
+          const rightArm = new THREE.Group();
+          rightArm.position.set(0.26, 0.8, 0.08);
+          const staff = new THREE.Group();
+          const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 1.15, 8), goldMat);
+          const headRing = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.02, 8, 20), goldMat);
+          headRing.position.y = 0.62;
+          const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.075, 0), crystalMat);
+          gem.position.y = 0.62;
+          staff.add(pole, headRing, gem);
+          rightArm.add(staff);
+          bodyGroup.add(rightArm);
+          parts.rightArm = rightArm;
+          parts.weapon = staff;
+
+          // Rotating Golden Bagua Ring behind back
+          parts.haloGroup.position.set(0, 0.88, -0.22);
+          const baguaOuter = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.02, 8, 8), goldMat);
+          const baguaInner = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.015, 6, 16), crystalMat);
+          parts.haloGroup.add(baguaOuter, baguaInner);
+
+        } else if (type === 'the_tu') {
+          // Muscular Bronze/Gold Armored Body Cultivator
+          const armorMat = new THREE.MeshStandardMaterial({ color: 0xb45309, metalness: 0.7, roughness: 0.25 });
+          const goldMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xca8a04, emissiveIntensity: 0.35, metalness: 0.85, roughness: 0.18 });
+          const magmaMat = new THREE.MeshStandardMaterial({ color: 0xff5722, emissive: 0xff3d00, emissiveIntensity: 0.65 });
+
+          const legs = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.22, 0.45, 10), armorMat);
+          legs.position.y = 0.23;
+          legs.castShadow = true;
+          bodyGroup.add(legs);
+
+          const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.24, 0.52, 10), goldMat);
+          torso.position.y = 0.68;
+          torso.castShadow = true;
+          bodyGroup.add(torso);
+
+          const head = new THREE.Mesh(new THREE.SphereGeometry(0.16, 16, 16), skinMat);
+          head.position.y = 1.08;
+          const headband = new THREE.Mesh(new THREE.TorusGeometry(0.155, 0.025, 8, 20), magmaMat);
+          headband.rotation.x = Math.PI / 2;
+          headband.position.y = 0.05;
+          head.add(headband);
+          bodyGroup.add(head);
+          parts.head = head;
+
+          // Giant Magma Gauntlets
+          const leftArm = new THREE.Group();
+          leftArm.position.set(-0.36, 0.82, 0.08);
+          const fistL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.26, 0.22), magmaMat);
+          fistL.position.y = -0.16;
+          leftArm.add(fistL);
+
+          const rightArm = new THREE.Group();
+          rightArm.position.set(0.36, 0.82, 0.08);
+          const fistR = fistL.clone();
+          rightArm.add(fistR);
+
+          bodyGroup.add(leftArm, rightArm);
+          parts.leftArm = leftArm;
+          parts.rightArm = rightArm;
+
+          // Orbiting Vajra Beads
+          parts.haloGroup.position.set(0, 0.85, 0);
+          for (let i = 0; i < 6; i++) {
+            const bead = new THREE.Mesh(new THREE.SphereGeometry(0.065, 10, 10), goldMat);
+            const a = (i / 6) * Math.PI * 2;
+            bead.position.set(Math.cos(a) * 0.46, Math.sin(a) * 0.15, Math.sin(a) * 0.46);
+            parts.haloGroup.add(bead);
+          }
+
+        } else if (type === 'quy_tu') {
+          // Dark Crimson & Shadow Ghost Cultivator with Soul Scythe
+          const cloakMat = new THREE.MeshStandardMaterial({ color: 0x1e1b2e, roughness: 0.5, metalness: 0.2 });
+          const crimsonMat = new THREE.MeshStandardMaterial({ color: 0xff2a54, emissive: 0xbe123c, emissiveIntensity: 0.5, metalness: 0.6, roughness: 0.2 });
+          const boneMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.3 });
+
+          const cloak = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.82, 10), cloakMat);
+          cloak.position.y = 0.41;
+          cloak.castShadow = true;
+          bodyGroup.add(cloak);
+
+          const head = new THREE.Mesh(new THREE.SphereGeometry(0.15, 14, 14), boneMat);
+          head.position.y = 1.02;
+          // Horned Ghost Mask
+          const hornL = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.18, 6), crimsonMat);
+          hornL.position.set(-0.1, 0.16, 0.05);
+          hornL.rotation.z = 0.35;
+          const hornR = hornL.clone();
+          hornR.position.x = 0.1;
+          hornR.rotation.z = -0.35;
+          head.add(hornL, hornR);
+          bodyGroup.add(head);
+          parts.head = head;
+
+          // Curved Soul Scythe
+          const rightArm = new THREE.Group();
+          rightArm.position.set(0.26, 0.8, 0.08);
+          const scythe = new THREE.Group();
+          const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.02, 1.22, 8), cloakMat);
+          const blade = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.52, 4), crimsonMat);
+          blade.position.set(0.18, 0.52, 0);
+          blade.rotation.z = -Math.PI / 2.3;
+          scythe.add(shaft, blade);
+          rightArm.add(scythe);
+          bodyGroup.add(rightArm);
+          parts.rightArm = rightArm;
+          parts.weapon = scythe;
+
+          // Orbiting Soul Wisps
+          parts.haloGroup.position.set(0, 0.75, 0);
+          for (let i = 0; i < 4; i++) {
+            const wisp = new THREE.Mesh(new THREE.OctahedronGeometry(0.065, 0), crimsonMat);
+            const a = (i / 4) * Math.PI * 2;
+            wisp.position.set(Math.cos(a) * 0.42, (i % 2) * 0.2, Math.sin(a) * 0.42);
+            parts.haloGroup.add(wisp);
+          }
+        }
+
+        // Golden Shield Dome (hidden until shielded)
+        const shieldGeo = new THREE.SphereGeometry(0.62, 18, 18);
+        const shieldMat = new THREE.MeshBasicMaterial({
+          color: 0xf5c542,
+          transparent: true,
+          opacity: 0.26,
+          wireframe: true
+        });
+        const shieldDome = new THREE.Mesh(shieldGeo, shieldMat);
+        shieldDome.position.y = 0.6;
+        shieldDome.visible = false;
+        root.add(shieldDome);
+        parts.shieldDome = shieldDome;
+
+        // Golden AR Proximity Pillar (hidden until camera is close)
+        const pillarGeo = new THREE.CylinderGeometry(0.42, 0.42, 2.2, 20, 1, true);
+        const pillarMat = new THREE.MeshBasicMaterial({
+          color: 0xf5c542,
+          transparent: true,
+          opacity: 0.22,
+          side: THREE.DoubleSide
+        });
+        const pillar = new THREE.Mesh(pillarGeo, pillarMat);
+        pillar.position.y = 1.1;
+        pillar.visible = false;
+        root.add(pillar);
+        parts.proximityPillar = pillar;
+
+        return parts;
+      }
+
+      static createMonsterMesh(monsterType) {
+        const root = new THREE.Group();
+        const bodyGroup = new THREE.Group();
+        root.add(bodyGroup);
+        const parts = { root, bodyGroup, leftArm: null, rightArm: null };
+
+        if (monsterType === 'wolf') {
+          // Huyết Lang (Blood Wolf)
+          const furMat = new THREE.MeshStandardMaterial({ color: 0x881337, roughness: 0.45, metalness: 0.2 });
+          const glowMat = new THREE.MeshStandardMaterial({ color: 0xff2a54, emissive: 0xff0040, emissiveIntensity: 0.8 });
+
+          const body = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.28, 0.62), furMat);
+          body.position.y = 0.34;
+          body.castShadow = true;
+          bodyGroup.add(body);
+
+          const head = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.34, 6), furMat);
+          head.rotation.x = Math.PI / 2;
+          head.position.set(0, 0.44, 0.38);
+          bodyGroup.add(head);
+
+          // Glowing dorsal spikes
+          for (let i = 0; i < 3; i++) {
+            const spike = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.2, 5), glowMat);
+            spike.position.set(0, 0.54, 0.15 - i * 0.18);
+            bodyGroup.add(spike);
+          }
+
+          parts.rightArm = head;
+
+        } else if (monsterType === 'golem') {
+          // Hắc Giáp Khôi Lỗi (Obsidian Golem)
+          const rockMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.65, roughness: 0.3 });
+          const coreMat = new THREE.MeshStandardMaterial({ color: 0xa855f7, emissive: 0x9333ea, emissiveIntensity: 0.75 });
+
+          const torso = new THREE.Mesh(new THREE.DodecahedronGeometry(0.36, 0), rockMat);
+          torso.position.y = 0.62;
+          torso.castShadow = true;
+          bodyGroup.add(torso);
+
+          const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.16, 0), coreMat);
+          core.position.set(0, 0.62, 0.26);
+          bodyGroup.add(core);
+
+          const armL = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.48, 0.18), rockMat);
+          armL.position.set(-0.42, 0.55, 0);
+          const armR = armL.clone();
+          armR.position.x = 0.42;
+          bodyGroup.add(armL, armR);
+          parts.leftArm = armL;
+          parts.rightArm = armR;
+
+        } else if (monsterType === 'ghost_minion') {
+          // Quỷ Nô (Summoned Ally Ghost Minion)
+          const ghostMat = new THREE.MeshStandardMaterial({
+            color: 0xf43f5e,
+            emissive: 0xe11d48,
+            emissiveIntensity: 0.5,
+            transparent: true,
+            opacity: 0.88
+          });
+          const body = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.58, 8), ghostMat);
+          body.position.y = 0.32;
+          const head = new THREE.Mesh(new THREE.SphereGeometry(0.12, 10, 10), ghostMat);
+          head.position.y = 0.68;
+          bodyGroup.add(body, head);
+          parts.rightArm = body;
+
+        } else if (monsterType === 'boss') {
+          // Cửu U Yêu Vương (Winged Demon Lord Boss)
+          const armorMat = new THREE.MeshStandardMaterial({ color: 0x27091c, metalness: 0.75, roughness: 0.25 });
+          const flameMat = new THREE.MeshStandardMaterial({ color: 0xff2a54, emissive: 0xff1e00, emissiveIntensity: 0.85 });
+
+          const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.26, 0.72, 10), armorMat);
+          torso.position.y = 0.62;
+          torso.castShadow = true;
+          bodyGroup.add(torso);
+
+          const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 14, 14), armorMat);
+          head.position.y = 1.12;
+          const hornL = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.36, 6), flameMat);
+          hornL.position.set(-0.16, 0.2, 0);
+          hornL.rotation.z = 0.45;
+          const hornR = hornL.clone();
+          hornR.position.x = 0.16;
+          hornR.rotation.z = -0.45;
+          head.add(hornL, hornR);
+          bodyGroup.add(head);
+
+          // Demon Wings
+          const wingGeo = new THREE.BoxGeometry(0.65, 0.42, 0.04);
+          const wingL = new THREE.Mesh(wingGeo, flameMat);
+          wingL.position.set(-0.45, 0.82, -0.2);
+          wingL.rotation.y = 0.35;
+          const wingR = wingL.clone();
+          wingR.position.x = 0.45;
+          wingR.rotation.y = -0.35;
+          bodyGroup.add(wingL, wingR);
+
+          // Twin Greatsword Arm
+          const rightArm = new THREE.Group();
+          rightArm.position.set(0.42, 0.78, 0.1);
+          const bossSword = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.95, 0.04), flameMat);
+          bossSword.position.y = 0.3;
+          rightArm.add(bossSword);
+          bodyGroup.add(rightArm);
+          parts.rightArm = rightArm;
+
+          root.scale.setScalar(1.42);
+        }
+
+        return parts;
+      }
+
+      static createRelicMesh(relicType, colorHex) {
+        const mat = new THREE.MeshStandardMaterial({
+          color: colorHex,
+          emissive: colorHex,
+          emissiveIntensity: 0.75,
+          metalness: 0.85,
+          roughness: 0.15
+        });
+        if (relicType === 'sword') {
+          const m = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.26, 4), mat);
+          m.rotation.z = Math.PI / 4;
+          return m;
+        }
+        if (relicType === 'bell') {
+          return new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.16, 12), mat);
+        }
+        if (relicType === 'banner') {
+          return new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.2, 0.03), mat);
+        }
+        return new THREE.Mesh(new THREE.OctahedronGeometry(0.085, 0), mat);
+      }
+    }
+
+    /***************************************************************************
+     * 4. 3D VFX & FLOATING COMBAT TEXT MANAGER
+     ***************************************************************************/
+    class VFXManager {
+      constructor(scene, camera, worldUiLayer) {
+        this.scene = scene;
+        this.camera = camera;
+        this.worldUiLayer = worldUiLayer;
+        this.effects = [];
+        this.shakeTimer = 0;
+        this.shakeIntensity = 0;
+      }
+
+      triggerScreenShake(intensity = 0.12, duration = 0.28) {
+        this.shakeIntensity = intensity;
+        this.shakeTimer = duration;
+      }
+
+      spawnFloatingText(worldPos, text, color = '#ffffff', size = '0.9rem') {
+        const screen = this.projectToScreen(worldPos.clone().add(new THREE.Vector3(0, 1.2, 0)));
+        if (!screen.visible) return;
+
+        const el = document.createElement('div');
+        el.className = 'floating-text';
+        el.style.left = `${screen.x}px`;
+        el.style.top = `${screen.y}px`;
+        el.style.color = color;
+        el.style.fontSize = size;
+        el.innerHTML = text;
+        this.worldUiLayer.appendChild(el);
+        setTimeout(() => el.remove(), 1050);
+      }
+
+      projectToScreen(vec3) {
+        const v = vec3.clone().project(this.camera);
+        const x = (v.x * 0.5 + 0.5) * window.innerWidth;
+        const y = (-(v.y * 0.5) + 0.5) * window.innerHeight;
+        return { x, y, visible: v.z < 1 };
+      }
+
+      // Flying Projectile (Sword Qi / Magic Orb)
+      spawnProjectile(startPos, targetUnit, colorHex, onHit) {
+        const geo = new THREE.ConeGeometry(0.07, 0.38, 6);
+        geo.rotateX(Math.PI / 2);
+        const mat = new THREE.MeshBasicMaterial({ color: colorHex });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.copy(startPos).add(new THREE.Vector3(0, 0.7, 0));
+        this.scene.add(mesh);
+
+        this.effects.push({
+          type: 'projectile',
+          mesh,
+          targetUnit,
+          speed: 11.5,
+          onHit
+        });
+      }
+
+      // Ultimate 1: Vạn Kiếm Quy Tông (Rain of Giant Glowing Swords)
+      spawnSwordRain(targetPositions, colorHex = 0x2de2e6) {
+        targetPositions.forEach((pos, idx) => {
+          setTimeout(() => {
+            const sword = new THREE.Group();
+            const bladeMat = new THREE.MeshBasicMaterial({ color: colorHex });
+            const blade = new THREE.Mesh(new THREE.ConeGeometry(0.11, 1.35, 4), bladeMat);
+            blade.rotation.x = Math.PI;
+            const guard = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.05, 0.08), new THREE.MeshBasicMaterial({ color: 0xf5c542 }));
+            guard.position.y = 0.55;
+            sword.add(blade, guard);
+
+            sword.position.set(pos.x + (Math.random() - 0.5) * 0.6, 5.2, pos.z + (Math.random() - 0.5) * 0.6);
+            this.scene.add(sword);
+
+            this.effects.push({
+              type: 'falling_sword',
+              mesh: sword,
+              targetY: 0.45,
+              speed: 18,
+              life: 0.65
+            });
+          }, idx * 45);
+        });
+      }
+
+      // Ultimate 2: Cửu Thiên Lôi Pháp (3D Jagged Lightning Bolt + Magic Circle)
+      spawnLightningStrike(pos, colorHex = 0xc084fc) {
+        // Ground Rune Circle
+        const ringGeo = new THREE.RingGeometry(0.15, 1.25, 28);
+        const ringMat = new THREE.MeshBasicMaterial({
+          color: colorHex,
+          side: THREE.DoubleSide,
+          transparent: true,
+          opacity: 0.85
+        });
+        const ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.rotation.x = -Math.PI / 2;
+        ring.position.set(pos.x, 0.05, pos.z);
+        this.scene.add(ring);
+
+        // Jagged Lightning Line
+        const points = [];
+        const segments = 9;
+        for (let i = 0; i <= segments; i++) {
+          const t = i / segments;
+          const jitterX = (i === 0 || i === segments) ? 0 : (Math.random() - 0.5) * 0.55;
+          const jitterZ = (i === 0 || i === segments) ? 0 : (Math.random() - 0.5) * 0.55;
+          points.push(new THREE.Vector3(pos.x + jitterX, 5.5 * (1 - t), pos.z + jitterZ));
+        }
+        const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
+        const lineMat = new THREE.LineBasicMaterial({ color: 0xfef08a, linewidth: 3 });
+        const bolt = new THREE.Line(lineGeo, lineMat);
+        this.scene.add(bolt);
+
+        this.effects.push({ type: 'fade', mesh: ring, life: 0.55, maxLife: 0.55 });
+        this.effects.push({ type: 'fade', mesh: bolt, life: 0.28, maxLife: 0.28 });
+      }
+
+      // Ultimate 3: Expanding Shockwave Ring
+      spawnShockwave(pos, colorHex = 0xf5c542, maxRadius = 2.4) {
+        const geo = new THREE.RingGeometry(0.2, 0.38, 32);
+        const mat = new THREE.MeshBasicMaterial({
+          color: colorHex,
+          side: THREE.DoubleSide,
+          transparent: true,
+          opacity: 0.9
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.rotation.x = -Math.PI / 2;
+        mesh.position.set(pos.x, 0.06, pos.z);
+        this.scene.add(mesh);
+
+        this.effects.push({
+          type: 'shockwave',
+          mesh,
+          scaleSpeed: maxRadius * 3.2,
+          life: 0.48,
+          maxLife: 0.48
+        });
+      }
+
+      // Ultimate 4: Soul Drain Tether Beam
+      spawnTetherBeam(fromPos, toPos, colorHex = 0xff2a54) {
+        const points = [
+          fromPos.clone().add(new THREE.Vector3(0, 0.7, 0)),
+          toPos.clone().add(new THREE.Vector3(0, 0.6, 0))
+        ];
+        const geo = new THREE.BufferGeometry().setFromPoints(points);
+        const mat = new THREE.LineBasicMaterial({ color: colorHex, transparent: true, opacity: 0.95 });
+        const line = new THREE.Line(geo, mat);
+        this.scene.add(line);
+        this.effects.push({ type: 'fade', mesh: line, life: 0.45, maxLife: 0.45 });
+      }
+
+      update(dt) {
+        for (let i = this.effects.length - 1; i >= 0; i--) {
+          const fx = this.effects[i];
+          if (fx.type === 'projectile') {
+            if (!fx.targetUnit || fx.targetUnit.dead) {
+              this.scene.remove(fx.mesh);
+              this.effects.splice(i, 1);
+              continue;
+            }
+            const targetPos = fx.targetUnit.mesh.position.clone().add(new THREE.Vector3(0, 0.65, 0));
+            const dir = targetPos.clone().sub(fx.mesh.position);
+            const dist = dir.length();
+            if (dist < 0.28) {
+              if (fx.onHit) fx.onHit();
+              this.scene.remove(fx.mesh);
+              this.effects.splice(i, 1);
+            } else {
+              dir.normalize();
+              fx.mesh.position.addScaledVector(dir, fx.speed * dt);
+              fx.mesh.lookAt(targetPos);
+            }
+          } else if (fx.type === 'falling_sword') {
+            if (fx.mesh.position.y > fx.targetY) {
+              fx.mesh.position.y = Math.max(fx.targetY, fx.mesh.position.y - fx.speed * dt);
+              if (fx.mesh.position.y <= fx.targetY) {
+                this.spawnShockwave(fx.mesh.position, 0x2de2e6, 0.8);
+              }
+            } else {
+              fx.life -= dt;
+              if (fx.life <= 0) {
+                this.scene.remove(fx.mesh);
+                this.effects.splice(i, 1);
+              }
+            }
+          } else if (fx.type === 'shockwave') {
+            fx.life -= dt;
+            const s = 1 + (1 - fx.life / fx.maxLife) * fx.scaleSpeed;
+            fx.mesh.scale.set(s, s, 1);
+            fx.mesh.material.opacity = Math.max(0, fx.life / fx.maxLife);
+            if (fx.life <= 0) {
+              this.scene.remove(fx.mesh);
+              this.effects.splice(i, 1);
+            }
+          } else if (fx.type === 'fade') {
+            fx.life -= dt;
+            if (fx.mesh.material) {
+              fx.mesh.material.opacity = Math.max(0, fx.life / fx.maxLife);
+            }
+            if (fx.life <= 0) {
+              this.scene.remove(fx.mesh);
+              this.effects.splice(i, 1);
+            }
+          }
+        }
+      }
+    }
+
+    /***************************************************************************
+     * 5. COMBAT UNIT CLASS (CULTIVATORS, SUMMONS & MONSTERS)
+     ***************************************************************************/
+    class CombatUnit {
+      constructor(config, isPlayer, scene, worldUiLayer, glbStudio = null) {
+        this.id = config.id || `unit_${Math.random().toString(36).slice(2, 7)}`;
+        this.slotId = config.slotId || (isPlayer && !config.isSummon ? this.id : (config.monsterSlotId || 'tieuyeu'));
+        this.monsterType = config.monsterType || 'wolf';
+        this.name = config.name;
+        this.role = config.role || 'Yêu Thú';
+        this.isPlayer = isPlayer;
+        this.isSummon = !!config.isSummon;
+        this.isBoss = !!config.isBoss;
+        this.scene = scene;
+        this.worldUiLayer = worldUiLayer;
+        this.glbStudio = glbStudio;
+
+        this.baseMaxHp = config.maxHp;
+        this.baseAtk = config.atk;
+        this.baseDef = config.def;
+        this.baseAtkSpeed = config.atkSpeed;
+        this.range = config.range;
+        this.moveSpeed = config.moveSpeed;
+        this.critChance = config.critChance || 0.1;
+        this.lifesteal = config.id === 'quy_tu' ? 0.25 : 0;
+        this.ultName = config.ultName || '';
+        this.ultDesc = config.ultDesc || '';
+        this.colorHex = config.hex || 0xff2a54;
+
+        this.maxHp = this.baseMaxHp;
+        this.hp = this.maxHp;
+        this.shield = 0;
+        this.maxMana = 100;
+        this.mana = 0;
+        this.atk = this.baseAtk;
+        this.def = this.baseDef;
+        this.atkSpeed = this.baseAtkSpeed;
+
+        this.col = config.defaultCol ?? 0;
+        this.row = config.defaultRow ?? 0;
+        this.dead = false;
+        this.stunTimer = 0;
+        this.attackCooldown = 0;
+        this.animTime = Math.random() * 10;
+        this.attackAnimTimer = 0;
+        this.hitFlashTimer = 0;
+        this.proximityBuffActive = false;
+        this.activeElementTile = null;
+        this.relics = [];
+        this.relicConfigs = [];
+
+        this.mixer = null;
+        this.customModelHolder = null;
+        this.instanceMaterials = [];
+
+        // Build Procedural Base + Apply Custom GLB if available
+        this.rebuildModelMesh();
+
+        // Create Overhead HTML Bar
+        this.createOverheadBar();
+      }
+
+      rebuildModelMesh() {
+        const prevPos = this.mesh ? this.mesh.position.clone() : new THREE.Vector3();
+        const prevRotY = this.mesh ? this.mesh.rotation.y : (this.isPlayer ? Math.PI : 0);
+        const prevVisible = this.mesh ? this.mesh.visible : true;
+
+        if (this.mesh) {
+          this.scene.remove(this.mesh);
+        }
+
+        // Always build the procedural base first (provides pedestal ring, shield dome, proximity pillar, and optional class Halo/Relics)
+        if (this.isPlayer && !this.isSummon) {
+          this.parts = ProceduralModelFactory.createCultivatorMesh(this.id);
+        } else {
+          this.parts = ProceduralModelFactory.createMonsterMesh(this.monsterType);
+        }
+
+        this.mixer = null;
+        this.customModelHolder = null;
+        this.instanceMaterials = [];
+
+        // Check if GLBModelStudio has a custom .GLB uploaded for this unit's slotId
+        if (this.glbStudio && this.glbStudio.hasCustomModel(this.slotId)) {
+          // If boss procedural root had 1.42x scale, reset root scale to 1.0 so GLB normalizer handles exact height
+          this.parts.root.scale.setScalar(1.0);
+
+          // Remove procedural body meshes while preserving haloGroup & relicGroup if desired
+          const childrenToRemove = [];
+          this.parts.bodyGroup.children.forEach(ch => {
+            if (ch !== this.parts.haloGroup && ch !== this.parts.relicGroup) {
+              childrenToRemove.push(ch);
+            }
+          });
+          childrenToRemove.forEach(ch => this.parts.bodyGroup.remove(ch));
+          this.parts.leftArm = null;
+          this.parts.rightArm = null;
+
+          const customData = this.glbStudio.buildInstanceForSlot(this.slotId, this.parts);
+          if (customData) {
+            this.customModelHolder = customData.userHolder;
+            this.mixer = customData.mixer;
+            this.instanceMaterials = customData.instanceMaterials;
+            this.parts.bodyGroup.add(this.customModelHolder);
+
+            if (this.parts.haloGroup) {
+              this.parts.haloGroup.visible = customData.keepHalo;
+            }
+          }
+        } else {
+          // Collect procedural materials for hit-flash
+          this.parts.bodyGroup.traverse(node => {
+            if (node.isMesh && node.material && node !== this.parts.shieldDome && node !== this.parts.proximityPillar) {
+              const clonedMat = node.material.clone();
+              node.material = clonedMat;
+              this.instanceMaterials.push(clonedMat);
+            }
+          });
+        }
+
+        // Re-attach any acquired 3D Relics
+        if (this.parts.relicGroup && this.relicConfigs.length > 0) {
+          this.relicConfigs.forEach((rc, idx) => {
+            const relicMesh = ProceduralModelFactory.createRelicMesh(rc.relicType, rc.colorHex);
+            const angle = idx * (Math.PI * 2 / 3);
+            relicMesh.position.set(Math.cos(angle) * 0.25, 0, Math.sin(angle) * 0.25);
+            this.parts.relicGroup.add(relicMesh);
+          });
+        }
+
+        this.mesh = this.parts.root;
+        this.mesh.position.copy(prevPos);
+        this.mesh.rotation.y = prevRotY;
+        this.mesh.visible = prevVisible && !this.dead;
+        this.scene.add(this.mesh);
+      }
+
+      createOverheadBar() {
+        const el = document.createElement('div');
+        el.className = 'unit-floating-bar';
+        const barColor = this.isPlayer ? '#00e5a3' : (this.isBoss ? '#ff0055' : '#ff3b3b');
+        el.innerHTML = `
+          <div class="unit-name-tag">${this.isBoss ? '👑 ' : ''}${this.name}</div>
+          <div class="hp-track">
+            <div class="hp-fill" style="width:100%; background:${barColor};"></div>
+            <div class="shield-fill" style="width:0%;"></div>
+          </div>
+          ${this.isPlayer && !this.isSummon ? `<div class="mana-track"><div class="mana-fill" style="width:0%;"></div></div>` : ''}
+        `;
+        this.worldUiLayer.appendChild(el);
+        this.uiBar = el;
+        this.hpFillEl = el.querySelector('.hp-fill');
+        this.shieldFillEl = el.querySelector('.shield-fill');
+        this.manaFillEl = el.querySelector('.mana-fill');
+        this.nameTagEl = el.querySelector('.unit-name-tag');
+      }
+
+      addRelic(name, relicType, colorHex) {
+        this.relics.push(name);
+        this.relicConfigs.push({ name, relicType, colorHex });
+        if (this.parts.relicGroup) {
+          const relicMesh = ProceduralModelFactory.createRelicMesh(relicType, colorHex);
+          const count = this.parts.relicGroup.children.length;
+          const angle = count * (Math.PI * 2 / 3);
+          relicMesh.position.set(Math.cos(angle) * 0.25, 0, Math.sin(angle) * 0.25);
+          this.parts.relicGroup.add(relicMesh);
+        }
+      }
+
+      triggerHitFlash() {
+        this.hitFlashTimer = 0.12;
+        this.instanceMaterials.forEach(mat => {
+          if (mat && 'emissive' in mat) {
+            if (mat.userData.origEmissive === undefined) {
+              mat.userData.origEmissive = mat.emissive.getHex();
+              mat.userData.origEmissiveIntensity = mat.emissiveIntensity ?? 0;
+            }
+            mat.emissive.setHex(0xffffff);
+            mat.emissiveIntensity = 0.9;
+          }
+        });
+      }
+
+      clearHitFlash() {
+        this.instanceMaterials.forEach(mat => {
+          if (mat && 'emissive' in mat && mat.userData.origEmissive !== undefined) {
+            mat.emissive.setHex(mat.userData.origEmissive);
+            mat.emissiveIntensity = mat.userData.origEmissiveIntensity;
+          }
+        });
+      }
+
+      resetForWave(board, teamBuffs) {
+        this.dead = false;
+        this.mesh.visible = true;
+        this.uiBar.style.display = 'block';
+        this.stunTimer = 0;
+        this.attackCooldown = 0;
+
+        // Check Elemental Tile under Hero
+        this.activeElementTile = board.getElementAt(this.col, this.row);
+        const elemMult = teamBuffs.elementalMult || 1.0;
+
+        this.maxHp = this.baseMaxHp;
+        this.atk = this.baseAtk;
+        this.def = this.baseDef;
+        this.atkSpeed = this.baseAtkSpeed * (1 + (teamBuffs.atkSpeedMult || 0));
+
+        if (this.activeElementTile === 'FIRE') {
+          this.atk = Math.round(this.atk * (1 + 0.4 * elemMult));
+        }
+        this.hp = teamBuffs.bloodPact ? Math.round(this.maxHp * 0.85) : this.maxHp;
+        this.shield = this.activeElementTile === 'METAL' ? Math.round(this.maxHp * 0.25 * elemMult) : 0;
+        this.mana = Math.min(100, teamBuffs.startingMana || 0);
+
+        const worldPos = board.tileToWorld(this.col, this.row);
+        this.mesh.position.copy(worldPos);
+        this.mesh.rotation.y = this.isPlayer ? Math.PI : 0;
+        this.updateBarUI();
+      }
+
+      takeDamage(rawAmount, attacker, vfx) {
+        if (this.dead) return;
+        let dmgReduction = this.def / (this.def + 100);
+        if (this.activeElementTile === 'METAL') {
+          dmgReduction = Math.min(0.75, dmgReduction + 0.35);
+        }
+        let finalDmg = Math.max(5, Math.round(rawAmount * (1 - dmgReduction)));
+
+        // Thorns reflection (Đông Hoàng Chung)
+        if (this.thorns && attacker && !attacker.dead) {
+          attacker.takeDamage(finalDmg * this.thorns, null, vfx);
+        }
+
+        if (this.shield > 0) {
+          if (this.shield >= finalDmg) {
+            this.shield -= finalDmg;
+            finalDmg = 0;
+          } else {
+            finalDmg -= this.shield;
+            this.shield = 0;
+          }
+        }
+
+        this.hp = Math.max(0, this.hp - finalDmg);
+        this.triggerHitFlash();
+        if (this.parts.shieldDome) {
+          this.parts.shieldDome.visible = this.shield > 0;
+        }
+
+        this.updateBarUI();
+
+        if (this.hp <= 0) {
+          this.dead = true;
+          this.clearHitFlash();
+          this.mesh.visible = false;
+          this.uiBar.style.display = 'none';
+          vfx.spawnShockwave(this.mesh.position, this.colorHex, 0.9);
+        }
+      }
+
+      heal(amount, vfx) {
+        if (this.dead) return;
+        const val = Math.round(amount);
+        this.hp = Math.min(this.maxHp, this.hp + val);
+        this.updateBarUI();
+        vfx.spawnFloatingText(this.mesh.position, `+${val}`, '#00e5a3', '0.88rem');
+      }
+
+      updateBarUI() {
+        if (!this.uiBar) return;
+        const hpPct = Math.max(0, Math.min(100, (this.hp / this.maxHp) * 100));
+        const shPct = Math.max(0, Math.min(100, (this.shield / this.maxHp) * 100));
+        this.hpFillEl.style.width = `${hpPct}%`;
+        this.shieldFillEl.style.width = `${shPct}%`;
+        if (this.manaFillEl) {
+          this.manaFillEl.style.width = `${Math.min(100, this.mana)}%`;
+        }
+        if (this.parts.shieldDome) {
+          this.parts.shieldDome.visible = this.shield > 0;
+        }
+      }
+
+      updateOverheadPosition(vfx) {
+        if (this.dead || !this.uiBar) return;
+        const heightOffset = this.isBoss ? 1.95 : 1.45;
+        const screen = vfx.projectToScreen(this.mesh.position.clone().add(new THREE.Vector3(0, heightOffset, 0)));
+        if (!screen.visible) {
+          this.uiBar.style.opacity = '0';
+        } else {
+          this.uiBar.style.opacity = '1';
+          this.uiBar.style.left = `${screen.x}px`;
+          this.uiBar.style.top = `${screen.y}px`;
+        }
+      }
+
+      animateProcedural(dt) {
+        if (this.dead) return;
+        this.animTime += dt * 3.5;
+
+        // Update Hit-Flash timer
+        if (this.hitFlashTimer > 0) {
+          this.hitFlashTimer -= dt;
+          if (this.hitFlashTimer <= 0) {
+            this.clearHitFlash();
+          }
+        }
+
+        // Update GLB Skeletal AnimationMixer if present
+        if (this.mixer) {
+          this.mixer.update(dt);
+        }
+
+        // Breathing & Halo Rotation
+        if (this.parts.bodyGroup) {
+          const baseLift = (!this.customModelHolder && this.id === 'phap_tu') ? 0.12 : 0;
+          this.parts.bodyGroup.position.y = Math.sin(this.animTime) * 0.03 + baseLift;
+        }
+        if (this.parts.haloGroup && this.parts.haloGroup.visible) {
+          this.parts.haloGroup.rotation.z += dt * 1.4;
+          if (this.id === 'the_tu' || this.id === 'quy_tu') {
+            this.parts.haloGroup.rotation.y += dt * 1.8;
+          }
+        }
+        if (this.parts.relicGroup) {
+          this.parts.relicGroup.rotation.y -= dt * 2.2;
+        }
+        if (this.parts.proximityPillar) {
+          this.parts.proximityPillar.visible = this.proximityBuffActive;
+          if (this.proximityBuffActive) {
+            this.parts.proximityPillar.rotation.y += dt * 2.0;
+          }
+        }
+
+        // Attack swing / lunge animation (works for both Procedural Arms and Custom GLB Models)
+        if (this.attackAnimTimer > 0) {
+          this.attackAnimTimer = Math.max(0, this.attackAnimTimer - dt * 4.5);
+          const swing = Math.sin(this.attackAnimTimer * Math.PI);
+          if (this.parts.rightArm) {
+            this.parts.rightArm.rotation.x = -swing * 1.25;
+          }
+          if (this.parts.leftArm) {
+            this.parts.leftArm.rotation.x = -swing * 1.1;
+          }
+          if (this.customModelHolder) {
+            this.customModelHolder.position.z = swing * 0.18;
+          }
+        } else {
+          if (this.parts.rightArm) this.parts.rightArm.rotation.x = 0;
+          if (this.parts.leftArm) this.parts.leftArm.rotation.x = 0;
+          if (this.customModelHolder) this.customModelHolder.position.z = 0;
+        }
+      }
+
+      destroy() {
+        this.scene.remove(this.mesh);
+        if (this.uiBar) this.uiBar.remove();
+      }
+    }
+
+    /***************************************************************************
+     * 6. 3D BAGUA ARENA BOARD & ELEMENTAL FORMATIONS
+     ***************************************************************************/
+    class BaguaBoard {
+      constructor(scene) {
+        this.scene = scene;
+        this.cols = 4;
+        this.rows = 6;
+        this.tileSize = 1.05;
+        this.boardGroup = new THREE.Group();
+        this.tiles = [];
+        this.elementalMap = new Map(); // key "col,row" -> elementId
+        this.telegraphMeshes = [];
+
+        this.buildBoard();
+        this.scene.add(this.boardGroup);
+      }
+
+      buildBoard() {
+        // Ornate Octagonal Bagua Altar Base
+        const altarGeo = new THREE.CylinderGeometry(3.85, 4.2, 0.32, 8);
+        const altarMat = new THREE.MeshStandardMaterial({
+          color: 0x0f172a,
+          metalness: 0.7,
+          roughness: 0.3
+        });
+        const altar = new THREE.Mesh(altarGeo, altarMat);
+        altar.position.y = -0.18;
+        altar.receiveShadow = true;
+        this.boardGroup.add(altar);
+
+        // Glowing Outer Rotating Bagua Rune Ring
+        const outerRingGeo = new THREE.RingGeometry(3.9, 4.12, 32);
+        const outerRingMat = new THREE.MeshBasicMaterial({
+          color: 0xf5c542,
+          side: THREE.DoubleSide,
+          transparent: true,
+          opacity: 0.5
+        });
+        this.outerRuneRing = new THREE.Mesh(outerRingGeo, outerRingMat);
+        this.outerRuneRing.rotation.x = -Math.PI / 2;
+        this.outerRuneRing.position.y = -0.01;
+        this.boardGroup.add(this.outerRuneRing);
+
+        // Create 4x6 Grid Tiles
+        for (let r = 0; r < this.rows; r++) {
+          for (let c = 0; c < this.cols; c++) {
+            const isPlayerSide = r >= 3;
+            const tileGeo = new THREE.BoxGeometry(this.tileSize * 0.92, 0.06, this.tileSize * 0.92);
+            const tileMat = new THREE.MeshStandardMaterial({
+              color: isPlayerSide ? 0x0d282c : 0x2a121d,
+              emissive: isPlayerSide ? 0x00e5a3 : 0xff2a54,
+              emissiveIntensity: 0.14,
+              metalness: 0.5,
+              roughness: 0.4
+            });
+            const tileMesh = new THREE.Mesh(tileGeo, tileMat);
+            const pos = this.tileToWorld(c, r);
+            tileMesh.position.set(pos.x, 0, pos.z);
+            tileMesh.receiveShadow = true;
+            tileMesh.userData = { col: c, row: r, isPlayerSide };
+
+            // Subtle Wireframe Border
+            const edges = new THREE.EdgesGeometry(tileGeo);
+            const line = new THREE.LineSegments(
+              edges,
+              new THREE.LineBasicMaterial({
+                color: isPlayerSide ? 0x00e5a3 : 0xff2a54,
+                transparent: true,
+                opacity: 0.42
+              })
+            );
+            tileMesh.add(line);
+
+            this.boardGroup.add(tileMesh);
+            this.tiles.push(tileMesh);
+          }
+        }
+      }
+
+      tileToWorld(col, row) {
+        const offsetX = ((this.cols - 1) * this.tileSize) / 2;
+        const offsetZ = ((this.rows - 1) * this.tileSize) / 2;
+        const s = this.boardGroup.scale.x || 1;
+        return new THREE.Vector3(
+          (col * this.tileSize - offsetX) * s,
+          0.03 * s,
+          (row * this.tileSize - offsetZ) * s
+        );
+      }
+
+      randomizeElementalNodes() {
+        this.elementalMap.clear();
+        // Reset all player tiles appearance
+        this.tiles.forEach(t => {
+          if (t.userData.isPlayerSide) {
+            t.material.color.setHex(0x0d282c);
+            t.material.emissive.setHex(0x00e5a3);
+            t.material.emissiveIntensity = 0.14;
+          }
+        });
+
+        const playerTiles = this.tiles.filter(t => t.userData.isPlayerSide);
+        const shuffled = [...playerTiles].sort(() => Math.random() - 0.5);
+        const keys = Object.keys(ELEMENT_TYPES);
+
+        for (let i = 0; i < 4; i++) {
+          const tile = shuffled[i];
+          const elem = ELEMENT_TYPES[keys[i]];
+          const key = `${tile.userData.col},${tile.userData.row}`;
+          this.elementalMap.set(key, elem.id);
+
+          tile.material.color.setHex(elem.color);
+          tile.material.emissive.setHex(elem.color);
+          tile.material.emissiveIntensity = 0.55;
+        }
+      }
+
+      getElementAt(col, row) {
+        return this.elementalMap.get(`${col},${row}`) || null;
+      }
+
+      showBossTelegraphTiles(tileCoords) {
+        this.clearBossTelegraph();
+        tileCoords.forEach(({ col, row }) => {
+          const geo = new THREE.PlaneGeometry(this.tileSize * 0.9, this.tileSize * 0.9);
+          const mat = new THREE.MeshBasicMaterial({
+            color: 0xff0033,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.65
+          });
+          const m = new THREE.Mesh(geo, mat);
+          m.rotation.x = -Math.PI / 2;
+          const p = this.tileToWorld(col, row);
+          m.position.set(p.x, 0.08, p.z);
+          this.scene.add(m);
+          this.telegraphMeshes.push(m);
+        });
+      }
+
+      clearBossTelegraph() {
+        this.telegraphMeshes.forEach(m => this.scene.remove(m));
+        this.telegraphMeshes = [];
+      }
+
+      update(dt) {
+        if (this.outerRuneRing) {
+          this.outerRuneRing.rotation.z += dt * 0.25;
+        }
+        // Pulse telegraph tiles
+        const pulse = 0.45 + Math.abs(Math.sin(performance.now() * 0.01)) * 0.45;
+        this.telegraphMeshes.forEach(m => {
+          m.material.opacity = pulse;
+        });
+      }
+    }
+
+    /***************************************************************************
+     * 7. MAIN GAME CONTROLLER (STATE MACHINE, AR, GESTURE SPELLS, AI)
+     ***************************************************************************/
+    class PuppetArenaGame {
+      constructor() {
+        this.container = document.getElementById('webgl-container');
+        this.worldUiLayer = document.getElementById('world-ui-layer');
+        this.videoEl = document.getElementById('ar-video');
+        this.spellCanvas = document.getElementById('spell-canvas');
+        this.spellCtx = this.spellCanvas.getContext('2d');
+
+        this.state = 'PREP_PHASE'; // PREP_PHASE | COMBAT_PHASE | DRAFT_PHASE | GAME_OVER
+        this.wave = 1;
+        this.bestWave = parseInt(localStorage.getItem('puppet_ar_best_wave') || '1', 10);
+        this.spiritStones = 60;
+        this.arActive = false;
+        this.gyroActive = false;
+        this.spellDrawMode = false;
+
+        this.heroes = [];
+        this.summons = [];
+        this.monsters = [];
+        this.selectedUnit = null;
+        this.draggedUnit = null;
+        this.emergencyDodgeCooldown = 0;
+        this.frenzyBuffTimer = 0;
+
+        this.teamBuffs = {
+          startingMana: 0,
+          manaGainMult: 1.0,
+          atkSpeedMult: 0,
+          stoneDropMult: 1.0,
+          elementalMult: 1.0,
+          bloodPact: false
+        };
+
+        this.initThreeScene();
+        this.board = new BaguaBoard(this.scene);
+        this.vfx = new VFXManager(this.scene, this.camera, this.worldUiLayer);
+        this.boardBaseOffset = new THREE.Vector3(0, 0, 0);
+
+        // Initialize Manual .GLB Studio with live hot-swap callback
+        this.glbStudio = new GLBModelStudio((updatedSlotId) => {
+          this.hotSwapUnitsBySlot(updatedSlotId);
+        });
+
+        this.spawnInitialHeroes();
+        this.board.randomizeElementalNodes();
+        this.resetWaveUnits();
+
+        this.initInputAndRaycaster();
+        this.initSpellGestureCanvas();
+        this.initHUDListeners();
+        this.renderHeroDock();
+        this.updateHUD();
+
+        this.clock = new THREE.Clock();
+        this.animate = this.animate.bind(this);
+        requestAnimationFrame(this.animate);
+      }
+
+      hotSwapUnitsBySlot(slotId) {
+        const allUnits = [...this.heroes, ...this.summons, ...this.monsters];
+        allUnits.forEach(u => {
+          if (u.slotId === slotId) {
+            u.rebuildModelMesh();
+          }
+        });
+      }
+
+      initThreeScene() {
+        this.scene = new THREE.Scene();
+
+        this.camera = new THREE.PerspectiveCamera(48, window.innerWidth / window.innerHeight, 0.1, 100);
+        this.camera.position.set(0, 6.4, 6.8);
+
+        this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        this.renderer.shadowMap.enabled = true;
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        this.container.appendChild(this.renderer.domElement);
+
+        this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+        this.controls.enableDamping = true;
+        this.controls.dampingFactor = 0.08;
+        this.controls.maxPolarAngle = Math.PI / 2.1;
+        this.controls.minDistance = 2.4;
+        this.controls.maxDistance = 13.5;
+        this.controls.target.set(0, 0.3, 0.3);
+
+        // Lighting
+        const hemiLight = new THREE.HemisphereLight(0xe0f2fe, 0x090d16, 0.95);
+        this.scene.add(hemiLight);
+
+        const dirLight = new THREE.DirectionalLight(0xfffbeb, 1.35);
+        dirLight.position.set(4.5, 9, 5);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 1024;
+        dirLight.shadow.mapSize.height = 1024;
+        this.scene.add(dirLight);
+
+        // Celestial Starfield Background (shown when AR camera is OFF)
+        this.skyGroup = new THREE.Group();
+        const starGeo = new THREE.BufferGeometry();
+        const starCount = 360;
+        const posArr = new Float32Array(starCount * 3);
+        for (let i = 0; i < starCount * 3; i += 3) {
+          posArr[i] = (Math.random() - 0.5) * 40;
+          posArr[i + 1] = (Math.random() - 0.2) * 25;
+          posArr[i + 2] = (Math.random() - 0.5) * 40;
+        }
+        starGeo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+        const starMat = new THREE.PointsMaterial({ color: 0xfde047, size: 0.11, transparent: true, opacity: 0.75 });
+        this.starParticles = new THREE.Points(starGeo, starMat);
+        this.skyGroup.add(this.starParticles);
+        this.scene.add(this.skyGroup);
+
+        window.addEventListener('resize', () => {
+          this.camera.aspect = window.innerWidth / window.innerHeight;
+          this.camera.updateProjectionMatrix();
+          this.renderer.setSize(window.innerWidth, window.innerHeight);
+          this.spellCanvas.width = window.innerWidth;
+          this.spellCanvas.height = window.innerHeight;
+        });
+      }
+
+      spawnInitialHeroes() {
+        Object.values(HERO_TEMPLATES).forEach(tpl => {
+          const hero = new CombatUnit(tpl, true, this.scene, this.worldUiLayer, this.glbStudio);
+          this.heroes.push(hero);
+        });
+      }
+
+      getHero(id) {
+        return this.heroes.find(h => h.id === id);
+      }
+
+      resetWaveUnits() {
+        // Clear summons & old monsters
+        this.summons.forEach(s => s.destroy());
+        this.summons = [];
+        this.monsters.forEach(m => m.destroy());
+        this.monsters = [];
+        this.board.clearBossTelegraph();
+
+        // Reset 4 Heroes onto their assigned tiles
+        this.heroes.forEach(h => h.resetForWave(this.board, this.teamBuffs));
+
+        // Spawn Wave Monsters on top 3 rows (rows 0..2)
+        const isBossWave = this.wave % 3 === 0;
+        const numMonsters = Math.min(8, 2 + Math.floor(this.wave * 0.85));
+        const usedCoords = new Set();
+
+        if (isBossWave) {
+          const bossHp = Math.round(1350 * Math.pow(1.26, this.wave - 1));
+          const bossAtk = Math.round(78 * Math.pow(1.18, this.wave - 1));
+          const boss = new CombatUnit({
+            name: `Cửu U Yêu Vương (Tầng ${this.wave})`,
+            monsterType: 'boss',
+            monsterSlotId: 'boss_yeu_vuong',
+            isBoss: true,
+            maxHp: bossHp,
+            atk: bossAtk,
+            def: 38,
+            atkSpeed: 0.78,
+            range: 1.65,
+            moveSpeed: 1.9,
+            defaultCol: 1,
+            defaultRow: 0,
+            hex: 0xff0055
+          }, false, this.scene, this.worldUiLayer, this.glbStudio);
+          boss.bossSlamCooldown = 4.5;
+          boss.resetForWave(this.board, {});
+          this.monsters.push(boss);
+          usedCoords.add('1,0');
+        }
+
+        for (let i = 0; i < numMonsters; i++) {
+          let c = Math.floor(Math.random() * 4);
+          let r = Math.floor(Math.random() * 3);
+          while (usedCoords.has(`${c},${r}`)) {
+            c = Math.floor(Math.random() * 4);
+            r = Math.floor(Math.random() * 3);
+          }
+          usedCoords.add(`${c},${r}`);
+
+          const isGolem = i % 2 === 1;
+          const scaleMult = Math.pow(1.2, this.wave - 1);
+          const monster = new CombatUnit({
+            name: isGolem ? 'Hắc Giáp Khôi Lỗi' : 'Huyết Lang Yêu',
+            monsterType: isGolem ? 'golem' : 'wolf',
+            monsterSlotId: isGolem ? 'tieuyeu' : 'huyet_lang',
+            maxHp: Math.round((isGolem ? 680 : 440) * scaleMult),
+            atk: Math.round((isGolem ? 48 : 62) * scaleMult),
+            def: isGolem ? 32 : 14,
+            atkSpeed: isGolem ? 0.75 : 1.22,
+            range: 1.25,
+            moveSpeed: isGolem ? 1.8 : 2.9,
+            defaultCol: c,
+            defaultRow: r,
+            hex: isGolem ? 0xa855f7 : 0xff2a54
+          }, false, this.scene, this.worldUiLayer, this.glbStudio);
+          monster.resetForWave(this.board, {});
+          this.monsters.push(monster);
+        }
+      }
+
+      /*************************************************************************
+       * DRAG-AND-DROP DEPLOYMENT & MID-COMBAT EMERGENCY DODGE
+       *************************************************************************/
+      initInputAndRaycaster() {
+        this.raycaster = new THREE.Raycaster();
+        this.pointer = new THREE.Vector2();
+        this.dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+        this.intersectPoint = new THREE.Vector3();
+
+        const dom = this.renderer.domElement;
+
+        const updatePointer = (e) => {
+          const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+          const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+          this.pointer.x = (clientX / window.innerWidth) * 2 - 1;
+          this.pointer.y = -(clientY / window.innerHeight) * 2 + 1;
+        };
+
+        const onPointerDown = (e) => {
+          if (this.spellDrawMode) return;
+          updatePointer(e);
+          this.raycaster.setFromCamera(this.pointer, this.camera);
+
+          // Check if player clicked on a Hero or Monster
+          const allUnits = [...this.heroes, ...this.monsters];
+          const meshes = allUnits.filter(u => !u.dead).map(u => u.mesh);
+          const hits = this.raycaster.intersectObjects(meshes, true);
+
+          if (hits.length > 0) {
+            let obj = hits[0].object;
+            while (obj.parent && !allUnits.some(u => u.mesh === obj)) {
+              obj = obj.parent;
+            }
+            const clickedUnit = allUnits.find(u => u.mesh === obj);
+            if (clickedUnit) {
+              this.selectUnit(clickedUnit);
+              // Allow dragging player heroes during PREP_PHASE or Emergency Dodge in COMBAT_PHASE
+              if (clickedUnit.isPlayer && !clickedUnit.isSummon) {
+                if (this.state === 'PREP_PHASE' || (this.state === 'COMBAT_PHASE' && this.emergencyDodgeCooldown <= 0)) {
+                  this.draggedUnit = clickedUnit;
+                  this.controls.enabled = false;
+                  sfx.playChime(540);
+                }
+              }
+            }
+          }
+        };
+
+        const onPointerMove = (e) => {
+          if (!this.draggedUnit) return;
+          updatePointer(e);
+          this.raycaster.setFromCamera(this.pointer, this.camera);
+          if (this.raycaster.ray.intersectPlane(this.dragPlane, this.intersectPoint)) {
+            this.draggedUnit.mesh.position.set(this.intersectPoint.x, 0.28, this.intersectPoint.z);
+          }
+        };
+
+        const onPointerUp = () => {
+          if (!this.draggedUnit) return;
+          this.controls.enabled = true;
+
+          // Find closest Player Tile (or any tile during combat emergency dodge)
+          let bestTile = null;
+          let minDist = Infinity;
+          this.board.tiles.forEach(tile => {
+            if (this.state === 'PREP_PHASE' && !tile.userData.isPlayerSide) return;
+            const d = tile.position.distanceTo(this.draggedUnit.mesh.position);
+            if (d < minDist) {
+              minDist = d;
+              bestTile = tile;
+            }
+          });
+
+          if (bestTile) {
+            const targetCol = bestTile.userData.col;
+            const targetRow = bestTile.userData.row;
+            const occupant = this.heroes.find(
+              h => h !== this.draggedUnit && !h.dead && h.col === targetCol && h.row === targetRow
+            );
+
+            if (occupant && this.state === 'PREP_PHASE') {
+              // Swap positions
+              occupant.col = this.draggedUnit.col;
+              occupant.row = this.draggedUnit.row;
+              occupant.resetForWave(this.board, this.teamBuffs);
+            }
+
+            this.draggedUnit.col = targetCol;
+            this.draggedUnit.row = targetRow;
+
+            if (this.state === 'PREP_PHASE') {
+              this.draggedUnit.resetForWave(this.board, this.teamBuffs);
+            } else if (this.state === 'COMBAT_PHASE') {
+              const newPos = this.board.tileToWorld(targetCol, targetRow);
+              this.draggedUnit.mesh.position.copy(newPos);
+              this.emergencyDodgeCooldown = 5.0;
+              this.vfx.spawnShockwave(newPos, 0x00e5a3, 1.1);
+              this.vfx.spawnFloatingText(newPos, '⚡ Độn Không Dịch Chuyển!', '#00e5a3');
+            }
+            sfx.playChime(780);
+            this.selectUnit(this.draggedUnit);
+          }
+
+          this.draggedUnit = null;
+        };
+
+        dom.addEventListener('mousedown', onPointerDown);
+        dom.addEventListener('mousemove', onPointerMove);
+        window.addEventListener('mouseup', onPointerUp);
+
+        dom.addEventListener('touchstart', onPointerDown, { passive: true });
+        dom.addEventListener('touchmove', onPointerMove, { passive: true });
+        window.addEventListener('touchend', onPointerUp);
+      }
+
+      /*************************************************************************
+       * 2D GESTURE SPELLCASTING ("HỌA PHÙ" OVERLAY)
+       *************************************************************************/
+      initSpellGestureCanvas() {
+        this.spellCanvas.width = window.innerWidth;
+        this.spellCanvas.height = window.innerHeight;
+        this.gesturePoints = [];
+        let isDrawing = false;
+
+        const getPt = (e) => {
+          const x = e.touches ? e.touches[0].clientX : e.clientX;
+          const y = e.touches ? e.touches[0].clientY : e.clientY;
+          return { x, y };
+        };
+
+        const startDraw = (e) => {
+          if (!this.spellDrawMode) return;
+          isDrawing = true;
+          this.gesturePoints = [getPt(e)];
+        };
+
+        const moveDraw = (e) => {
+          if (!isDrawing || !this.spellDrawMode) return;
+          const pt = getPt(e);
+          this.gesturePoints.push(pt);
+
+          // Render glowing golden brush stroke
+          this.spellCtx.clearRect(0, 0, this.spellCanvas.width, this.spellCanvas.height);
+          this.spellCtx.save();
+          this.spellCtx.strokeStyle = '#f5c542';
+          this.spellCtx.shadowColor = '#f5c542';
+          this.spellCtx.shadowBlur = 16;
+          this.spellCtx.lineWidth = 6;
+          this.spellCtx.lineCap = 'round';
+          this.spellCtx.beginPath();
+          this.gesturePoints.forEach((p, i) => {
+            if (i === 0) this.spellCtx.moveTo(p.x, p.y);
+            else this.spellCtx.lineTo(p.x, p.y);
+          });
+          this.spellCtx.stroke();
+          this.spellCtx.restore();
+        };
+
+        const endDraw = () => {
+          if (!isDrawing) return;
+          isDrawing = false;
+          this.spellCtx.clearRect(0, 0, this.spellCanvas.width, this.spellCanvas.height);
+          this.recognizeAndCastGesture(this.gesturePoints);
+          this.toggleSpellDrawMode(false);
+        };
+
+        this.spellCanvas.addEventListener('mousedown', startDraw);
+        this.spellCanvas.addEventListener('mousemove', moveDraw);
+        window.addEventListener('mouseup', endDraw);
+
+        this.spellCanvas.addEventListener('touchstart', startDraw, { passive: true });
+        this.spellCanvas.addEventListener('touchmove', moveDraw, { passive: true });
+        window.addEventListener('touchend', endDraw);
+      }
+
+      recognizeAndCastGesture(pts) {
+        if (pts.length < 6) return;
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        pts.forEach(p => {
+          if (p.x < minX) minX = p.x;
+          if (p.x > maxX) maxX = p.x;
+          if (p.y < minY) minY = p.y;
+          if (p.y > maxY) maxY = p.y;
+        });
+        const width = maxX - minX;
+        const height = maxY - minY;
+        const startEndDist = Math.hypot(pts[0].x - pts[pts.length - 1].x, pts[0].y - pts[pts.length - 1].y);
+
+        // 1. Circle ('O') -> Start and End points are relatively close & balanced aspect ratio
+        if (width > 40 && height > 40 && startEndDist < Math.max(width, height) * 0.55) {
+          this.castTalisman('HEAL');
+        }
+        // 2. Vertical Line ('|') -> Height significantly greater than Width
+        else if (height > width * 1.65 && height > 50) {
+          this.castTalisman('THUNDER');
+        }
+        // 3. Diagonal / V-shape ('/') -> Any other decisive slash
+        else if (Math.max(width, height) > 50) {
+          this.castTalisman('FRENZY');
+        }
+      }
+
+      castTalisman(type) {
+        if (type === 'THUNDER') {
+          if (this.spiritStones < 30) {
+            this.vfx.spawnFloatingText(new THREE.Vector3(0, 1, 0), 'Không đủ Linh Thạch (Cần 30💎)!', '#ff2a54');
+            return;
+          }
+          this.addSpiritStones(-30);
+          sfx.playThunderStrike();
+          this.vfx.triggerScreenShake(0.22, 0.4);
+          this.vfx.spawnFloatingText(new THREE.Vector3(0, 1.8, 0), '⚡ THIÊN LÔI PHÙ GIÁNG THẾ!', '#fde047', '1.15rem');
+
+          const dmg = 160 + this.wave * 45;
+          this.monsters.forEach(m => {
+            if (!m.dead) {
+              this.vfx.spawnLightningStrike(m.mesh.position, 0xfde047);
+              m.takeDamage(dmg, null, this.vfx);
+              m.stunTimer = Math.max(m.stunTimer, 1.0);
+              this.vfx.spawnFloatingText(m.mesh.position, `-${dmg} ⚡`, '#fde047');
+            }
+          });
+        } else if (type === 'HEAL') {
+          if (this.spiritStones < 25) {
+            this.vfx.spawnFloatingText(new THREE.Vector3(0, 1, 0), 'Không đủ Linh Thạch (Cần 25💎)!', '#ff2a54');
+            return;
+          }
+          this.addSpiritStones(-25);
+          sfx.playVictoryFanfare();
+          this.vfx.spawnFloatingText(new THREE.Vector3(0, 1.8, 0), '🪷 THANH LIÊN TỊNH THẾ PHÙ!', '#00e5a3', '1.15rem');
+
+          [...this.heroes, ...this.summons].forEach(h => {
+            if (!h.dead) {
+              h.heal(h.maxHp * 0.35, this.vfx);
+              h.shield += Math.round(h.maxHp * 0.2);
+              h.updateBarUI();
+              this.vfx.spawnShockwave(h.mesh.position, 0x00e5a3, 1.2);
+            }
+          });
+        } else if (type === 'FRENZY') {
+          if (this.spiritStones < 25) {
+            this.vfx.spawnFloatingText(new THREE.Vector3(0, 1, 0), 'Không đủ Linh Thạch (Cần 25💎)!', '#ff2a54');
+            return;
+          }
+          this.addSpiritStones(-25);
+          sfx.playMagicBolt();
+          this.frenzyBuffTimer = 5.0;
+          this.vfx.spawnFloatingText(new THREE.Vector3(0, 1.8, 0), '🔥 CUỒNG HUYẾT CHIẾN PHÙ (+50% TỐC ĐÁNH)!', '#ff2a54', '1.15rem');
+          this.heroes.forEach(h => {
+            if (!h.dead) this.vfx.spawnShockwave(h.mesh.position, 0xff2a54, 1.1);
+          });
+        }
+      }
+
+      toggleSpellDrawMode(forceVal) {
+        this.spellDrawMode = forceVal !== undefined ? forceVal : !this.spellDrawMode;
+        this.spellCanvas.classList.toggle('active', this.spellDrawMode);
+        document.getElementById('btn-draw-mode').classList.toggle('active', this.spellDrawMode);
+        document.getElementById('spell-mode-hint').style.display = this.spellDrawMode ? 'block' : 'none';
+      }
+
+      /*************************************************************************
+       * COMBAT AI, ULTIMATE SKILLS & AR SPATIAL PROXIMITY BUFF
+       *************************************************************************/
+      startCombatWave() {
+        if (this.state !== 'PREP_PHASE') return;
+        this.state = 'COMBAT_PHASE';
+        sfx.playHeavySlam();
+        document.getElementById('btn-start-wave').disabled = true;
+        document.getElementById('phase-status-title').textContent = `ĐANG GIAO CHIẾN - ẢI ${this.wave}`;
+        document.getElementById('phase-status-sub').textContent = 'Zoom gần Khôi Lỗi để kích hoạt Linh Khí Nhập Thể!';
+      }
+
+      updateCombat(dt) {
+        if (this.emergencyDodgeCooldown > 0) {
+          this.emergencyDodgeCooldown = Math.max(0, this.emergencyDodgeCooldown - dt);
+        }
+        if (this.frenzyBuffTimer > 0) {
+          this.frenzyBuffTimer = Math.max(0, this.frenzyBuffTimer - dt);
+        }
+
+        // 1. Check AR Camera Proximity Buff ("Linh Khí Nhập Thể")
+        let closestHero = null;
+        let minCamDist = Infinity;
+        this.heroes.forEach(h => {
+          h.proximityBuffActive = false;
+          if (!h.dead) {
+            const d = this.camera.position.distanceTo(h.mesh.position);
+            if (d < minCamDist) {
+              minCamDist = d;
+              closestHero = h;
+            }
+          }
+        });
+
+        const bannerEl = document.getElementById('proximity-banner');
+        if (closestHero && minCamDist < 5.6) {
+          closestHero.proximityBuffActive = true;
+          bannerEl.innerHTML = `<i class="bi bi-lightning-charge-fill text-warning me-1"></i><strong>⚡ LINH KHÍ NHẬP THỂ: ${closestHero.name.toUpperCase()}</strong> (+35% Tốc Đánh & +20% Chí Mạng)`;
+        } else {
+          bannerEl.innerHTML = `<i class="bi bi-stars me-1"></i>Zoom gần Khôi Lỗi để kích hoạt <strong>Linh Khí Nhập Thể (+35% Tốc Đánh)</strong>`;
+        }
+
+        // 2. Update All Allies & Monsters
+        const allies = [...this.heroes, ...this.summons].filter(u => !u.dead);
+        const enemies = this.monsters.filter(u => !u.dead);
+
+        if (allies.length === 0) {
+          this.triggerGameOver();
+          return;
+        }
+        if (enemies.length === 0) {
+          this.completeWave();
+          return;
+        }
+
+        allies.forEach(unit => this.stepUnitAI(unit, enemies, allies, dt));
+        enemies.forEach(unit => this.stepUnitAI(unit, allies, enemies, dt));
+      }
+
+      stepUnitAI(unit, opponents, teammates, dt) {
+        if (unit.dead) return;
+
+        // Elemental Tile Passive Regen (Water & Wood)
+        if (unit.isPlayer) {
+          const elemMult = this.teamBuffs.elementalMult || 1.0;
+          if (unit.activeElementTile === 'WATER') {
+            unit.mana = Math.min(100, unit.mana + 15 * elemMult * dt);
+          }
+          if (unit.activeElementTile === 'WOOD' && unit.hp < unit.maxHp) {
+            unit.hp = Math.min(unit.maxHp, unit.hp + unit.maxHp * 0.08 * elemMult * dt);
+          }
+          unit.updateBarUI();
+        }
+
+        // Boss Special AoE Telegraph Slam Mechanic
+        if (unit.isBoss) {
+          unit.bossSlamCooldown -= dt;
+          if (unit.bossSlamCooldown <= 0 && !unit.telegraphActive) {
+            unit.telegraphActive = true;
+            unit.telegraphTimer = 2.2;
+            // Target tiles around healthiest/closest hero
+            const targetHero = opponents[0];
+            if (targetHero) {
+              unit.telegraphCoords = [
+                { col: targetHero.col, row: targetHero.row },
+                { col: Math.max(0, targetHero.col - 1), row: targetHero.row },
+                { col: Math.min(3, targetHero.col + 1), row: targetHero.row }
+              ];
+              this.board.showBossTelegraphTiles(unit.telegraphCoords);
+              document.getElementById('boss-telegraph-alert').style.display = 'block';
+              sfx.playChime(320);
+            }
+          } else if (unit.telegraphActive) {
+            unit.telegraphTimer -= dt;
+            if (unit.telegraphTimer <= 0) {
+              unit.telegraphActive = false;
+              unit.bossSlamCooldown = 6.5;
+              document.getElementById('boss-telegraph-alert').style.display = 'none';
+              this.board.clearBossTelegraph();
+              sfx.playHeavySlam();
+              this.vfx.triggerScreenShake(0.25, 0.35);
+
+              (unit.telegraphCoords || []).forEach(({ col, row }) => {
+                const p = this.board.tileToWorld(col, row);
+                this.vfx.spawnShockwave(p, 0xff0055, 1.35);
+                opponents.forEach(hero => {
+                  if (!hero.dead && hero.mesh.position.distanceTo(p) < 0.85) {
+                    const slamDmg = Math.round(unit.atk * 2.2);
+                    hero.takeDamage(slamDmg, unit, this.vfx);
+                    this.vfx.spawnFloatingText(hero.mesh.position, `-${slamDmg} HỦY DIỆT!`, '#ff0055', '1.05rem');
+                  }
+                });
+              });
+            }
+          }
+        }
+
+        if (unit.stunTimer > 0) {
+          unit.stunTimer -= dt;
+          return;
+        }
+
+        // Find nearest alive opponent
+        let target = null;
+        let minDist = Infinity;
+        opponents.forEach(opp => {
+          if (!opp.dead) {
+            const d = unit.mesh.position.distanceTo(opp.mesh.position);
+            if (d < minDist) {
+              minDist = d;
+              target = opp;
+            }
+          }
+        });
+
+        if (!target) return;
+
+        // Smooth rotate towards target
+        const lookPos = target.mesh.position.clone();
+        lookPos.y = unit.mesh.position.y;
+        unit.mesh.lookAt(lookPos);
+
+        const effectiveRange = unit.range * (this.board.boardGroup.scale.x || 1);
+
+        if (minDist > effectiveRange) {
+          // Move toward target
+          const dir = target.mesh.position.clone().sub(unit.mesh.position).normalize();
+          unit.mesh.position.addScaledVector(dir, unit.moveSpeed * dt);
+        } else {
+          // Within range -> Attack!
+          let spdMult = 1.0;
+          if (unit.proximityBuffActive) spdMult += 0.35;
+          if (unit.isPlayer && this.frenzyBuffTimer > 0) spdMult += 0.5;
+
+          unit.attackCooldown -= dt * unit.atkSpeed * spdMult;
+          if (unit.attackCooldown <= 0) {
+            unit.attackCooldown = 1.0;
+            unit.attackAnimTimer = 1.0;
+
+            // Cast Ultimate if Mana is full
+            if (unit.isPlayer && !unit.isSummon && unit.mana >= 100) {
+              unit.mana = 0;
+              this.executeHeroUltimate(unit, target, opponents, teammates);
+              unit.updateBarUI();
+            } else {
+              this.executeBasicAttack(unit, target);
+            }
+          }
+        }
+      }
+
+      executeBasicAttack(unit, target) {
+        const isCrit = Math.random() < (unit.critChance + (unit.proximityBuffActive ? 0.2 : 0));
+        const dmg = Math.round(unit.atk * (isCrit ? 1.75 : 1.0));
+
+        if (unit.isPlayer) {
+          unit.mana = Math.min(100, unit.mana + 25 * (this.teamBuffs.manaGainMult || 1));
+          unit.updateBarUI();
+        }
+
+        if (unit.range > 1.8) {
+          // Ranged Projectile
+          sfx.playSwordSlash();
+          this.vfx.spawnProjectile(unit.mesh.position, target, unit.colorHex, () => {
+            if (target.dead) return;
+            target.takeDamage(dmg, unit, this.vfx);
+            this.vfx.spawnFloatingText(
+              target.mesh.position,
+              isCrit ? `💥 ${dmg}!` : `-${dmg}`,
+              isCrit ? '#fde047' : '#ffffff',
+              isCrit ? '1.05rem' : '0.86rem'
+            );
+            this.handlePostHitEffects(unit, target, dmg);
+          });
+        } else {
+          // Melee Hit
+          sfx.playSwordSlash();
+          target.takeDamage(dmg, unit, this.vfx);
+          this.vfx.spawnFloatingText(
+            target.mesh.position,
+            isCrit ? `💥 ${dmg}!` : `-${dmg}`,
+            isCrit ? '#fde047' : '#ffffff',
+            isCrit ? '1.05rem' : '0.86rem'
+          );
+          this.handlePostHitEffects(unit, target, dmg);
+        }
+      }
+
+      handlePostHitEffects(unit, target, dmgDealt) {
+        // Lifesteal for Quỷ Tu
+        if (unit.lifesteal > 0 && !unit.dead) {
+          unit.heal(dmgDealt * unit.lifesteal, this.vfx);
+        }
+        // Thunder Relic Proc for Pháp Tu
+        if (unit.thunderProc && !target.dead && Math.random() < 0.35) {
+          this.vfx.spawnLightningStrike(target.mesh.position, 0xc084fc);
+          target.takeDamage(unit.atk * 0.6, unit, this.vfx);
+          target.stunTimer = Math.max(target.stunTimer, 0.5);
+        }
+        // Award Spirit Stones if Monster dies
+        if (!unit.isPlayer || unit.isSummon) return;
+        if (target.dead && !target.stoneRewarded) {
+          target.stoneRewarded = true;
+          const drop = Math.round((target.isBoss ? 35 : 10) * (this.teamBuffs.stoneDropMult || 1));
+          this.addSpiritStones(drop);
+          this.vfx.spawnFloatingText(target.mesh.position, `+${drop} 💎`, '#38bdf8', '0.92rem');
+        }
+      }
+
+      executeHeroUltimate(hero, primaryTarget, enemies, allies) {
+        this.vfx.spawnFloatingText(hero.mesh.position, `✨ ${hero.ultName.toUpperCase()}!`, hero.colorHex, '1.1rem');
+
+        if (hero.id === 'kiem_tu') {
+          // Vạn Kiếm Quy Tông: Rain 12+ giant glowing swords
+          sfx.playSwordSlash();
+          const swordCount = 12 + (hero.extraSwords || 0);
+          const positions = [];
+          for (let i = 0; i < swordCount; i++) {
+            const sampleEnemy = enemies[i % enemies.length];
+            positions.push(sampleEnemy.mesh.position.clone());
+          }
+          this.vfx.spawnSwordRain(positions, 0x2de2e6);
+          this.vfx.triggerScreenShake(0.14, 0.3);
+
+          enemies.forEach(e => {
+            if (!e.dead) {
+              const ultDmg = Math.round(hero.atk * 2.6);
+              e.takeDamage(ultDmg, hero, this.vfx);
+              this.vfx.spawnFloatingText(e.mesh.position, `🗡️ -${ultDmg}`, '#2de2e6', '1.05rem');
+              this.handlePostHitEffects(hero, e, ultDmg);
+            }
+          });
+
+        } else if (hero.id === 'phap_tu') {
+          // Cửu Thiên Lôi Pháp: Lightning & Bagua AoE on primary target cluster
+          sfx.playThunderStrike();
+          this.vfx.triggerScreenShake(0.18, 0.35);
+          const center = primaryTarget.mesh.position.clone();
+          this.vfx.spawnLightningStrike(center, 0xc084fc);
+
+          enemies.forEach(e => {
+            if (!e.dead && e.mesh.position.distanceTo(center) < 2.2) {
+              const ultDmg = Math.round(hero.atk * 2.15);
+              e.takeDamage(ultDmg, hero, this.vfx);
+              this.vfx.spawnFloatingText(e.mesh.position, `⚡ -${ultDmg}`, '#c084fc', '1.05rem');
+              this.handlePostHitEffects(hero, e, ultDmg);
+            }
+          });
+
+        } else if (hero.id === 'the_tu') {
+          // Bất Diệt Kim Thân: 35% Max HP Shield + AoE Stun Slam
+          sfx.playHeavySlam();
+          this.vfx.triggerScreenShake(0.16, 0.28);
+          hero.shield += Math.round(hero.maxHp * 0.35);
+          hero.updateBarUI();
+          this.vfx.spawnShockwave(hero.mesh.position, 0xf5c542, 2.5);
+
+          const stunTime = hero.stunDuration || 1.8;
+          enemies.forEach(e => {
+            if (!e.dead && e.mesh.position.distanceTo(hero.mesh.position) < 2.5) {
+              const ultDmg = Math.round(hero.atk * 1.6);
+              e.takeDamage(ultDmg, hero, this.vfx);
+              e.stunTimer = Math.max(e.stunTimer, stunTime);
+              this.vfx.spawnFloatingText(e.mesh.position, `💫 CHOÁNG!`, '#fde047', '0.95rem');
+              this.handlePostHitEffects(hero, e, ultDmg);
+            }
+          });
+
+        } else if (hero.id === 'quy_tu') {
+          // Bách Quỷ Dạ Hành: Drain HP from weakest enemy + Summon Quỷ Nô
+          sfx.playMagicBolt();
+          const weakest = [...enemies].sort((a, b) => a.hp - b.hp)[0];
+          if (weakest) {
+            this.vfx.spawnTetherBeam(hero.mesh.position, weakest.mesh.position, 0xff2a54);
+            const drainDmg = Math.round(hero.atk * 2.0);
+            weakest.takeDamage(drainDmg, hero, this.vfx);
+            hero.heal(drainDmg * 0.65, this.vfx);
+            this.handlePostHitEffects(hero, weakest, drainDmg);
+          }
+
+          const summonCount = hero.doubleSummon ? 2 : 1;
+          for (let i = 0; i < summonCount; i++) {
+            if (this.summons.filter(s => !s.dead).length >= 4) break;
+            const ghost = new CombatUnit({
+              name: 'Quỷ Nô',
+              monsterType: 'ghost_minion',
+              monsterSlotId: 'quy_no',
+              isSummon: true,
+              maxHp: Math.round(hero.maxHp * 0.48),
+              atk: Math.round(hero.atk * 0.72),
+              def: 15,
+              atkSpeed: 1.25,
+              range: 1.25,
+              moveSpeed: 3.1,
+              hex: 0xff2a54
+            }, true, this.scene, this.worldUiLayer, this.glbStudio);
+            ghost.mesh.position.copy(hero.mesh.position).add(new THREE.Vector3((i === 0 ? -0.55 : 0.55), 0, -0.45));
+            this.vfx.spawnShockwave(ghost.mesh.position, 0xff2a54, 0.8);
+            this.summons.push(ghost);
+          }
+        }
+      }
+
+      /*************************************************************************
+       * WAVE COMPLETION, ROGUELITE CARD DRAFT & GAME OVER
+       *************************************************************************/
+      completeWave() {
+        this.state = 'DRAFT_PHASE';
+        sfx.playVictoryFanfare();
+        this.board.clearBossTelegraph();
+        document.getElementById('boss-telegraph-alert').style.display = 'none';
+
+        if (this.wave > this.bestWave) {
+          this.bestWave = this.wave;
+          localStorage.setItem('puppet_ar_best_wave', String(this.bestWave));
+        }
+
+        this.showRogueliteDraftModal();
+      }
+
+      showRogueliteDraftModal() {
+        document.getElementById('draft-wave-badge').textContent = `Ải ${this.wave} Hoàn Tất`;
+        this.populateDraftCards();
+        const modalEl = document.getElementById('draftModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+      }
+
+      populateDraftCards() {
+        const container = document.getElementById('draft-cards-container');
+        container.innerHTML = '';
+        const shuffled = [...ROGUELITE_CARDS].sort(() => Math.random() - 0.5).slice(0, 3);
+
+        shuffled.forEach(card => {
+          const col = document.createElement('div');
+          col.className = 'col-12 col-md-4';
+          col.innerHTML = `
+            <div class="roguelite-card ${card.rarity === 'immortal' ? 'card-rarity-immortal' : ''}">
+              <div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <span class="fs-2">${card.icon}</span>
+                  <span class="badge ${card.rarity === 'immortal' ? 'bg-danger' : 'bg-warning text-dark'}">${card.rarity === 'immortal' ? 'Tiên Phẩm' : 'Hoàng Kim'}</span>
+                </div>
+                <h6 class="fw-bold text-warning mb-1">${card.name}</h6>
+                <div class="text-info small mb-2" style="font-size:0.75rem;">${card.category}</div>
+                <p class="small text-light opacity-85 mb-3">${card.desc}</p>
+              </div>
+              <button class="btn btn-xianxia-gold btn-sm w-100">Lĩnh Ngộ Cơ Duyên</button>
+            </div>
+          `;
+          col.querySelector('.roguelite-card').addEventListener('click', () => {
+            sfx.playVictoryFanfare();
+            card.apply(this);
+            const modalEl = document.getElementById('draftModal');
+            bootstrap.Modal.getInstance(modalEl).hide();
+            this.advanceToNextWave();
+          });
+          container.appendChild(col);
+        });
+      }
+
+      advanceToNextWave() {
+        this.wave++;
+        this.state = 'PREP_PHASE';
+        this.board.randomizeElementalNodes();
+        this.resetWaveUnits();
+        document.getElementById('btn-start-wave').disabled = false;
+        document.getElementById('phase-status-title').textContent = 'GIAI ĐOẠN BÀY TRẬN';
+        document.getElementById('phase-status-sub').textContent = 'Kéo thả Khôi Lỗi vào Mắt Trận Ngũ Hành mới';
+        this.renderHeroDock();
+        this.updateHUD();
+        if (this.selectedUnit) this.selectUnit(this.selectedUnit);
+      }
+
+      triggerGameOver() {
+        this.state = 'GAME_OVER';
+        this.board.clearBossTelegraph();
+        document.getElementById('boss-telegraph-alert').style.display = 'none';
+        document.getElementById('go-wave').textContent = `Ải ${this.wave}`;
+        document.getElementById('go-realm').textContent = this.getCurrentRealmName();
+        const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('gameOverModal'));
+        modal.show();
+      }
+
+      restartFullGame() {
+        this.wave = 1;
+        this.spiritStones = 60;
+        this.teamBuffs = {
+          startingMana: 0,
+          manaGainMult: 1.0,
+          atkSpeedMult: 0,
+          stoneDropMult: 1.0,
+          elementalMult: 1.0,
+          bloodPact: false
+        };
+        this.heroes.forEach(h => h.destroy());
+        this.heroes = [];
+        this.spawnInitialHeroes();
+
+        this.state = 'PREP_PHASE';
+        this.board.randomizeElementalNodes();
+        this.resetWaveUnits();
+        document.getElementById('btn-start-wave').disabled = false;
+        this.renderHeroDock();
+        this.updateHUD();
+      }
+
+      /*************************************************************************
+       * HUD, INSPECTOR & AR CAMERA / GYRO CONTROLS
+       *************************************************************************/
+      getCurrentRealmName() {
+        const idx = Math.min(REALM_NAMES.length - 1, Math.floor((this.wave - 1) / 2));
+        return REALM_NAMES[idx];
+      }
+
+      addSpiritStones(delta) {
+        this.spiritStones = Math.max(0, this.spiritStones + delta);
+        this.updateHUD();
+      }
+
+      updateHUD() {
+        document.getElementById('wave-number').textContent = this.wave;
+        document.getElementById('best-wave').textContent = this.bestWave;
+        document.getElementById('spirit-stones').textContent = this.spiritStones;
+        document.getElementById('realm-display').textContent = this.getCurrentRealmName();
+
+        document.getElementById('btn-spell-thunder').disabled = this.spiritStones < 30;
+        document.getElementById('btn-spell-heal').disabled = this.spiritStones < 25;
+        document.getElementById('btn-spell-frenzy').disabled = this.spiritStones < 25;
+      }
+
+      renderHeroDock() {
+        const dock = document.getElementById('hero-dock');
+        dock.innerHTML = '';
+        this.heroes.forEach(h => {
+          const card = document.createElement('div');
+          card.className = `hero-slot-card ${h.dead ? 'dead' : ''} ${this.selectedUnit === h ? 'selected' : ''}`;
+          card.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="fw-bold small" style="color:${HERO_TEMPLATES[h.id].color};">${h.name}</span>
+              <span class="badge bg-dark border border-secondary" style="font-size:0.68rem;">⚔️${h.atk}</span>
+            </div>
+            <div class="hero-desc-text text-light opacity-75" style="font-size:0.7rem;">${h.role}</div>
+          `;
+          card.addEventListener('click', () => {
+            this.selectUnit(h);
+            sfx.playChime(620);
+          });
+          dock.appendChild(card);
+        });
+      }
+
+      selectUnit(unit) {
+        this.selectedUnit = unit;
+        this.renderHeroDock();
+        const insp = document.getElementById('unit-inspector');
+        insp.style.display = 'block';
+        document.getElementById('insp-name').textContent = unit.name;
+        document.getElementById('insp-role').textContent = unit.role;
+        document.getElementById('insp-hp').textContent = `${unit.hp}/${unit.maxHp}`;
+        document.getElementById('insp-atk').textContent = unit.atk;
+        document.getElementById('insp-def').textContent = unit.def;
+        document.getElementById('insp-spd').textContent = `${unit.atkSpeed.toFixed(2)}/s`;
+
+        const elemInfo = unit.activeElementTile ? ELEMENT_TYPES[unit.activeElementTile] : null;
+        document.getElementById('insp-tile-buff').innerHTML = elemInfo
+          ? `${elemInfo.icon} Đang đứng trên <strong>${elemInfo.name}</strong> (${elemInfo.desc})`
+          : '<span class="text-secondary">Chưa đứng trên Mắt Trận Ngũ Hành</span>';
+
+        document.getElementById('insp-ult-name').textContent = unit.ultName ? `Tuyệt Kỹ: ${unit.ultName}` : 'Đòn Đánh Yêu Thú';
+        document.getElementById('insp-ult-desc').textContent = unit.ultDesc || 'Tấn công Khôi Lỗi gần nhất.';
+
+        const relicBox = document.getElementById('insp-relics');
+        if (unit.relics && unit.relics.length > 0) {
+          relicBox.innerHTML = unit.relics.map(r => `<span class="badge bg-warning text-dark">${r}</span>`).join('');
+        } else {
+          relicBox.innerHTML = '<span class="text-secondary fst-italic" style="font-size:0.74rem;">Chưa trang bị</span>';
+        }
+      }
+
+      async toggleARCamera() {
+        const btnLabel = document.getElementById('ar-btn-label');
+        const btn = document.getElementById('btn-toggle-ar');
+        if (!this.arActive) {
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+              video: { facingMode: { ideal: 'environment' } },
+              audio: false
+            });
+            this.videoEl.srcObject = stream;
+            this.videoEl.style.display = 'block';
+            this.skyGroup.visible = false;
+            this.arActive = true;
+            btn.classList.add('active');
+            btnLabel.textContent = 'Tắt Camera AR';
+          } catch (err) {
+            this.vfx.spawnFloatingText(new THREE.Vector3(0, 1.5, 0), 'Thiết bị không có Camera sau - Giữ nền Tiên Giới 3D!', '#fde047');
+          }
+        } else {
+          if (this.videoEl.srcObject) {
+            this.videoEl.srcObject.getTracks().forEach(t => t.stop());
+            this.videoEl.srcObject = null;
+          }
+          this.videoEl.style.display = 'none';
+          this.skyGroup.visible = true;
+          this.arActive = false;
+          btn.classList.remove('active');
+          btnLabel.textContent = 'Bật Camera AR';
+        }
+      }
+
+      initHUDListeners() {
+        document.getElementById('btn-start-wave').addEventListener('click', () => this.startCombatWave());
+        document.getElementById('btn-toggle-ar').addEventListener('click', () => this.toggleARCamera());
+
+        // AR Board Calibration Drawer Listeners
+        const calPanel = document.getElementById('ar-calibration-panel');
+        const calBtn = document.getElementById('btn-ar-calibrate');
+        calBtn.addEventListener('click', () => {
+          const isHidden = calPanel.style.display === 'none';
+          calPanel.style.display = isHidden ? 'block' : 'none';
+          calBtn.classList.toggle('active', isHidden);
+        });
+        document.getElementById('btn-close-ar-cal').addEventListener('click', () => {
+          calPanel.style.display = 'none';
+          calBtn.classList.remove('active');
+        });
+        document.getElementById('btn-lock-ar-cal').addEventListener('click', () => {
+          calPanel.style.display = 'none';
+          calBtn.classList.remove('active');
+          sfx.playChime(760);
+        });
+
+        const updateBoardCalibration = () => {
+          const x = parseFloat(document.getElementById('cal-pos-x').value) || 0;
+          const y = parseFloat(document.getElementById('cal-pos-y').value) || 0;
+          const z = parseFloat(document.getElementById('cal-pos-z').value) || 0;
+          document.getElementById('cal-x-val').textContent = x.toFixed(1);
+          document.getElementById('cal-y-val').textContent = y.toFixed(1);
+          document.getElementById('cal-z-val').textContent = z.toFixed(1);
+          this.boardBaseOffset.set(x, y, z);
+          this.controls.target.set(x, y + 0.3, z + 0.3);
+        };
+        ['cal-pos-x', 'cal-pos-y', 'cal-pos-z'].forEach(id => {
+          document.getElementById(id).addEventListener('input', updateBoardCalibration);
+        });
+        document.getElementById('btn-reset-ar-cal').addEventListener('click', () => {
+          ['cal-pos-x', 'cal-pos-y', 'cal-pos-z'].forEach(id => {
+            document.getElementById(id).value = '0';
+          });
+          updateBoardCalibration();
+        });
+
+        document.getElementById('board-scale-slider').addEventListener('input', (e) => {
+          const val = parseFloat(e.target.value);
+          this.board.boardGroup.scale.setScalar(val);
+          if (this.state === 'PREP_PHASE') {
+            this.heroes.forEach(h => h.resetForWave(this.board, this.teamBuffs));
+            this.monsters.forEach(m => m.resetForWave(this.board, {}));
+          }
+        });
+
+        document.getElementById('btn-reset-cam').addEventListener('click', () => {
+          this.camera.position.set(0, 6.4, 6.8);
+          this.controls.target.set(0, 0.3, 0.3);
+          this.controls.update();
+        });
+
+        document.getElementById('btn-audio').addEventListener('click', (e) => {
+          sfx.enabled = !sfx.enabled;
+          const btn = e.currentTarget;
+          btn.classList.toggle('active', sfx.enabled);
+          document.getElementById('audio-icon').className = sfx.enabled ? 'bi bi-volume-up-fill' : 'bi bi-volume-mute-fill';
+        });
+
+        document.getElementById('btn-close-inspector').addEventListener('click', () => {
+          document.getElementById('unit-inspector').style.display = 'none';
+          this.selectedUnit = null;
+          this.renderHeroDock();
+        });
+
+        // Talisman Spell Buttons & Draw Mode
+        document.getElementById('btn-draw-mode').addEventListener('click', () => this.toggleSpellDrawMode());
+        document.getElementById('btn-spell-thunder').addEventListener('click', () => this.castTalisman('THUNDER'));
+        document.getElementById('btn-spell-heal').addEventListener('click', () => this.castTalisman('HEAL'));
+        document.getElementById('btn-spell-frenzy').addEventListener('click', () => this.castTalisman('FRENZY'));
+
+        // Reroll Roguelite Cards
+        document.getElementById('btn-reroll-draft').addEventListener('click', () => {
+          if (this.spiritStones >= 15) {
+            this.addSpiritStones(-15);
+            sfx.playChime(740);
+            this.populateDraftCards();
+          }
+        });
+
+        // Restart Game
+        document.getElementById('btn-restart-game').addEventListener('click', () => {
+          const modalEl = document.getElementById('gameOverModal');
+          bootstrap.Modal.getInstance(modalEl).hide();
+          this.restartFullGame();
+        });
+
+        // Gyroscope Parallax Toggle
+        document.getElementById('btn-gyro').addEventListener('click', async (e) => {
+          const btn = e.currentTarget;
+          if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+            try {
+              const res = await DeviceOrientationEvent.requestPermission();
+              if (res === 'granted') {
+                this.gyroActive = !this.gyroActive;
+                btn.classList.toggle('active', this.gyroActive);
+              }
+            } catch (_) {}
+          } else {
+            this.gyroActive = !this.gyroActive;
+            btn.classList.toggle('active', this.gyroActive);
+          }
+        });
+
+        window.addEventListener('deviceorientation', (e) => {
+          if (!this.gyroActive || e.gamma === null || e.beta === null) return;
+          const tiltX = THREE.MathUtils.clamp(e.gamma / 45, -1, 1) * 0.15;
+          const tiltZ = THREE.MathUtils.clamp((e.beta - 45) / 45, -1, 1) * 0.15;
+          this.board.boardGroup.rotation.z = THREE.MathUtils.lerp(this.board.boardGroup.rotation.z, -tiltX, 0.1);
+          this.board.boardGroup.rotation.x = THREE.MathUtils.lerp(this.board.boardGroup.rotation.x, tiltZ, 0.1);
+        });
+      }
+
+      /*************************************************************************
+       * MAIN RENDER & ANIMATION LOOP
+       *************************************************************************/
+      animate() {
+        requestAnimationFrame(this.animate);
+        const dt = Math.min(0.05, this.clock.getDelta());
+
+        this.controls.update();
+        this.board.update(dt);
+        this.vfx.update(dt);
+
+        if (this.starParticles && this.skyGroup.visible) {
+          this.starParticles.rotation.y += dt * 0.04;
+        }
+
+        // Screen Shake Effect on Board
+        if (this.vfx.shakeTimer > 0) {
+          this.vfx.shakeTimer -= dt;
+          const s = this.vfx.shakeIntensity;
+          this.board.boardGroup.position.set(
+            this.boardBaseOffset.x + (Math.random() - 0.5) * s,
+            this.boardBaseOffset.y,
+            this.boardBaseOffset.z + (Math.random() - 0.5) * s
+          );
+        } else {
+          this.board.boardGroup.position.copy(this.boardBaseOffset);
+        }
+
+        if (this.state === 'COMBAT_PHASE') {
+          this.updateCombat(dt);
+        }
+
+        // Animate all units & project overhead UI bars
+        const allUnits = [...this.heroes, ...this.summons, ...this.monsters];
+        allUnits.forEach(u => {
+          u.animateProcedural(dt);
+          u.updateOverheadPosition(this.vfx);
+        });
+
+        // Live refresh inspector HP if open
+        if (this.selectedUnit && !this.selectedUnit.dead) {
+          document.getElementById('insp-hp').textContent = `${this.selectedUnit.hp}/${this.selectedUnit.maxHp}`;
+        }
+
+        this.renderer.render(this.scene, this.camera);
+      }
+    }
+
+    // Initialize game when window loads
+    window.onload = function () {
+      window.gameInstance = new PuppetArenaGame();
+    };
+  </script>
+</body>
+</html>
